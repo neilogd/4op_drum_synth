@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{BD318CF6-836C-4ACC-BA03-055A6641A87A}</ProjectGuid>
+    <RootNamespace>My4opdrummodule</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17661.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\schematics\4op_drum_module\portaudio\include;D:\schematics\4op_drum_module\portaudio\src\common;D:\schematics\4op_drum_module\portaudio\src\os\win;D:\schematics\4op_drum_module\portmidi\pm_common;D:\schematics\4op_drum_module\portmidi\porttime;D:\schematics\4op_drum_module\imgui;D:\schematics\4op_drum_module\teVirtualMIDI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PA_USE_WASAPI;_MBCS;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>teVirtualMIDI32.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\schematics\4op_drum_module\teVirtualMIDI</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\schematics\4op_drum_module\portaudio\include;D:\schematics\4op_drum_module\portaudio\src\common;D:\schematics\4op_drum_module\portaudio\src\os\win;D:\schematics\4op_drum_module\portmidi\pm_common;D:\schematics\4op_drum_module\portmidi\porttime;D:\schematics\4op_drum_module\imgui;D:\schematics\4op_drum_module\teVirtualMIDI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PA_USE_WASAPI;_MBCS;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>teVirtualMIDI64.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\schematics\4op_drum_module\teVirtualMIDI</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\schematics\4op_drum_module\portaudio\include;D:\schematics\4op_drum_module\portaudio\src\common;D:\schematics\4op_drum_module\portaudio\src\os\win;D:\schematics\4op_drum_module\portmidi\pm_common;D:\schematics\4op_drum_module\portmidi\porttime;D:\schematics\4op_drum_module\imgui;D:\schematics\4op_drum_module\teVirtualMIDI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PA_USE_WASAPI;_MBCS;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>teVirtualMIDI32.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>D:\schematics\4op_drum_module\teVirtualMIDI</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\schematics\4op_drum_module\portaudio\include;D:\schematics\4op_drum_module\portaudio\src\common;D:\schematics\4op_drum_module\portaudio\src\os\win;D:\schematics\4op_drum_module\portmidi\pm_common;D:\schematics\4op_drum_module\portmidi\porttime;D:\schematics\4op_drum_module\imgui;D:\schematics\4op_drum_module\teVirtualMIDI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;PA_USE_WASAPI;_MBCS;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>teVirtualMIDI64.lib;d3d11.lib;d3dcompiler.lib;dxgi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>D:\schematics\4op_drum_module\teVirtualMIDI</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="encoders.h" />
+    <ClInclude Include="enum.h" />
+    <ClInclude Include="factory_settings.h" />
+    <ClInclude Include="display.h" />
+    <ClInclude Include="imgui\imconfig.h" />
+    <ClInclude Include="imgui\imgui.h" />
+    <ClInclude Include="imgui\imgui_internal.h" />
+    <ClInclude Include="imgui\imstb_rectpack.h" />
+    <ClInclude Include="imgui\imstb_textedit.h" />
+    <ClInclude Include="imgui\imstb_truetype.h" />
+    <ClInclude Include="imgui_impl_dx11.h" />
+    <ClInclude Include="imgui_impl_win32.h" />
+    <ClInclude Include="io_expander.h" />
+    <ClInclude Include="midi_instruments.h" />
+    <ClInclude Include="nukedopl3.h" />
+    <ClInclude Include="opl3.h" />
+    <ClInclude Include="opn2.h" />
+    <ClInclude Include="params.h" />
+    <ClInclude Include="portaudio\src\common\pa_allocation.h" />
+    <ClInclude Include="portaudio\src\common\pa_converters.h" />
+    <ClInclude Include="portaudio\src\common\pa_cpuload.h" />
+    <ClInclude Include="portaudio\src\common\pa_debugprint.h" />
+    <ClInclude Include="portaudio\src\common\pa_dither.h" />
+    <ClInclude Include="portaudio\src\common\pa_endianness.h" />
+    <ClInclude Include="portaudio\src\common\pa_gitrevision.h" />
+    <ClInclude Include="portaudio\src\common\pa_hostapi.h" />
+    <ClInclude Include="portaudio\src\common\pa_memorybarrier.h" />
+    <ClInclude Include="portaudio\src\common\pa_process.h" />
+    <ClInclude Include="portaudio\src\common\pa_ringbuffer.h" />
+    <ClInclude Include="portaudio\src\common\pa_stream.h" />
+    <ClInclude Include="portaudio\src\common\pa_trace.h" />
+    <ClInclude Include="portaudio\src\common\pa_types.h" />
+    <ClInclude Include="portaudio\src\common\pa_util.h" />
+    <ClInclude Include="portaudio\src\os\win\pa_win_coinitialize.h" />
+    <ClInclude Include="portaudio\src\os\win\pa_win_wdmks_utils.h" />
+    <ClInclude Include="portaudio\src\os\win\pa_x86_plain_converters.h" />
+    <ClInclude Include="portmidi\pm_common\pminternal.h" />
+    <ClInclude Include="portmidi\pm_common\pmutil.h" />
+    <ClInclude Include="portmidi\pm_common\portmidi.h" />
+    <ClInclude Include="portmidi\pm_win\pmwinmm.h" />
+    <ClInclude Include="portmidi\porttime\porttime.h" />
+    <ClInclude Include="ui.h" />
+    <ClInclude Include="utils.h" />
+    <ClInclude Include="ym3438.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="display.cpp" />
+    <ClCompile Include="dx11_main.cpp" />
+    <ClCompile Include="encoders.cpp" />
+    <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_demo.cpp" />
+    <ClCompile Include="imgui\imgui_draw.cpp" />
+    <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="imgui_impl_dx11.cpp" />
+    <ClCompile Include="imgui_impl_win32.cpp" />
+    <ClCompile Include="nukedopl3.c">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+    </ClCompile>
+    <ClCompile Include="opl3_test.cpp" />
+    <ClCompile Include="params.cpp" />
+    <ClCompile Include="portaudio\src\common\pa_allocation.c" />
+    <ClCompile Include="portaudio\src\common\pa_converters.c" />
+    <ClCompile Include="portaudio\src\common\pa_cpuload.c" />
+    <ClCompile Include="portaudio\src\common\pa_debugprint.c" />
+    <ClCompile Include="portaudio\src\common\pa_dither.c" />
+    <ClCompile Include="portaudio\src\common\pa_front.c" />
+    <ClCompile Include="portaudio\src\common\pa_process.c" />
+    <ClCompile Include="portaudio\src\common\pa_ringbuffer.c" />
+    <ClCompile Include="portaudio\src\common\pa_stream.c" />
+    <ClCompile Include="portaudio\src\common\pa_trace.c" />
+    <ClCompile Include="portaudio\src\hostapi\wasapi\pa_win_wasapi.c" />
+    <ClCompile Include="portaudio\src\os\win\pa_win_coinitialize.c" />
+    <ClCompile Include="portaudio\src\os\win\pa_win_hostapis.c" />
+    <ClCompile Include="portaudio\src\os\win\pa_win_util.c" />
+    <ClCompile Include="portaudio\src\os\win\pa_win_waveformat.c" />
+    <ClCompile Include="portaudio\src\os\win\pa_win_wdmks_utils.c" />
+    <ClCompile Include="portaudio\src\os\win\pa_x86_plain_converters.c" />
+    <ClCompile Include="portmidi\pm_common\pmutil.c" />
+    <ClCompile Include="portmidi\pm_common\portmidi.c" />
+    <ClCompile Include="portmidi\pm_win\pmwin.c" />
+    <ClCompile Include="portmidi\pm_win\pmwinmm.c" />
+    <ClCompile Include="portmidi\porttime\porttime.c" />
+    <ClCompile Include="portmidi\porttime\ptwinmm.c" />
+    <ClCompile Include="ui.cpp" />
+    <ClCompile Include="ym3438.c">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
+    </ClCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
