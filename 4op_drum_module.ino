@@ -1,5 +1,6 @@
 #include <EEPROM.h>
 #include <SPI.h>
+#include <USBComposite.h>
 #include <stdio.h>
 #include <algorithm>
 #include <cmath>
@@ -20,6 +21,9 @@
 
 #include "MCP23S17.h"
 
+#include "USBMIDIEx.h"
+
+
 #define DEBUG_LOGGING (0)
 
 Params params;
@@ -28,7 +32,6 @@ Params params;
  * Globals
  */
 SPIClass SPI_2(2);
-
 Display display(&SPI_2);
 
 void toggleLED()
@@ -293,6 +296,84 @@ struct ICTransportExpander
 };
 }
 
+
+////////////////////////////////////////////////
+// FROM Arduino MIDI library
+namespace SysEx
+{
+/*! \brief Encode System Exclusive messages.
+ SysEx messages are encoded to guarantee transmission of data bytes higher than
+ 127 without breaking the MIDI protocol. Use this static method to convert the
+ data you want to send.
+ \param inData The data to encode.
+ \param outSysEx The output buffer where to store the encoded message.
+ \param inLength The lenght of the input buffer.
+ \return The lenght of the encoded output buffer.
+ @see decodeSysEx
+ Code inspired from Ruin & Wesen's SysEx encoder/decoder - http://ruinwesen.com
+ */
+unsigned encode(const byte* inData, byte* outSysEx, unsigned inLength)
+{
+    unsigned outLength  = 0;     // Num bytes in output array.
+    byte count          = 0;     // Num 7bytes in a block.
+    outSysEx[0]         = 0;
+
+    for (unsigned i = 0; i < inLength; ++i)
+    {
+        const byte data = inData[i];
+        const byte msb  = data >> 7;
+        const byte body = data & 0x7f;
+
+        outSysEx[0] |= (msb << (6 - count));
+        outSysEx[1 + count] = body;
+
+        if (count++ == 6)
+        {
+            outSysEx   += 8;
+            outLength  += 8;
+            outSysEx[0] = 0;
+            count       = 0;
+        }
+    }
+    return outLength + count + (count != 0 ? 1 : 0);
+}
+
+/*! \brief Decode System Exclusive messages.
+ SysEx messages are encoded to guarantee transmission of data bytes higher than
+ 127 without breaking the MIDI protocol. Use this static method to reassemble
+ your received message.
+ \param inSysEx The SysEx data received from MIDI in.
+ \param outData    The output buffer where to store the decrypted message.
+ \param inLength The lenght of the input buffer.
+ \return The lenght of the output buffer.
+ @see encodeSysEx @see getSysExArrayLength
+ Code inspired from Ruin & Wesen's SysEx encoder/decoder - http://ruinwesen.com
+ */
+unsigned decode(const byte* inSysEx, byte* outData, unsigned inLength)
+{
+    unsigned count  = 0;
+    byte msbStorage = 0;
+    byte byteIndex  = 0;
+
+    for (unsigned i = 0; i < inLength; ++i)
+    {
+        if ((i % 8) == 0)
+        {
+            msbStorage = inSysEx[i];
+            byteIndex  = 6;
+        }
+        else
+        {
+            const byte body = inSysEx[i];
+            const byte msb  = ((msbStorage >> byteIndex--) & 1) << 7;
+            outData[count++] = msb | body;
+        }
+    }
+    return count;
+}
+
+} // end namespace SysEx
+
 OPL3::Interface<OPL3::ICTransportExpander> opl3;
 AnalogInputs analogInputs;
 Encoders encoders;
@@ -463,14 +544,116 @@ bool voice_update(VoiceParams& params, int idx, bool keyon, int vel, float freq)
   return keyon;
 }
 
+static int activeSensingUpdateRate = 0;
+static int displayUpdateTimer = 0;
+
+class USBMIDIHandler: public USBMIDIEx
+{
+public:
+  enum SysExType
+  {
+    // If received, EEPROM data should be sent back. 
+    EEPROM_REQUEST = 0x01,
+    // If received, store to EEPROM 
+    EEPROM_DATA = 0x02,
+  };
+
+  const byte idBytes[3] =
+  {
+    0x00000000, 0x00000000, 0x00000001
+  };
+
+  byte sysexBuffer[1024];
+
+  USBMIDIHandler()
+  {
+    setSystemExclusiveBuffer(sysexBuffer, sizeof(sysexBuffer));
+  }
+
+  int activity = 0;
+  bool hadActivity()
+  {
+    if(activity > 1000)
+      activity = 1000;
+    if(activity > 0)
+    {
+      --activity;
+      return true;
+    }
+    return false;
+  }
+
+  
+  void handleNoteOff(unsigned int channel, unsigned int note, unsigned int velocity) override
+  {
+    activity += 100;
+  }
+  
+  void handleNoteOn(unsigned int channel, unsigned int note, unsigned int velocity) override
+  {
+    activity += 100;
+  }
+
+  void handleControlChange(unsigned int channel, unsigned int controller, unsigned int value) override
+  {
+    activity += 100;
+  }
+
+  void sendSystemExclusive(SysExType type, const void* data, unsigned int size)
+  {
+      activity += 100 + size * 2;
+    
+      sysexBuffer[0] = idBytes[0];
+      sysexBuffer[1] = idBytes[1];
+      sysexBuffer[2] = idBytes[2];
+      sysexBuffer[3] = type;
+
+      unsigned int length = 4;
+      if(data != nullptr)
+      {
+        // TODO: CHECK SIZE FIRST
+        length += SysEx::encode((const byte*)data, (byte*)&sysexBuffer[4], size);
+      }
+
+      USBMIDIEx::sendSystemExclusive(&sysexBuffer[0], length);        
+  }
+
+  void handleSystemExclusive(const byte * array, unsigned int size) override
+  {
+    char buf[128];
+    activity += 100 + size * 2;
+
+    if(array[0] == idBytes[0] && array[1] == idBytes[1] && array[2] == idBytes[2])
+    {
+      // Handle sysex.
+      switch(array[3])
+      {
+      case EEPROM_REQUEST:
+        sendSystemExclusive(EEPROM_DATA, &params, sizeof(params));
+        return;
+
+      case EEPROM_DATA:
+        SysEx::decode(&array[4], (byte*)&params, size - 4);
+
+        displayUpdateTimer = 0;
+        return;
+
+      default:
+        break;
+      }
+    }
+  }
+    
+};
+
+USBMIDIHandler midi;
+
+
 void beginScan()
 {
     Timer2.pause();
     Timer2.setPeriod(200);
     Timer2.setMode(1, TIMER_OUTPUT_COMPARE);
-    Timer2.setMode(2, TIMER_DISABLED);
-    Timer2.setMode(3, TIMER_DISABLED);
-    Timer2.setMode(4, TIMER_DISABLED);
     Timer2.setCompare(TIMER_CH1, 1); 
     Timer2.attachCompare1Interrupt([](){ 
       encoders.scan();
@@ -514,22 +697,12 @@ void writeSettings()
     uint16_t ret = EEPROM.update(addr++, *data++);
     if(!(ret == EEPROM_OK || ret == EEPROM_SAME_VALUE))
     {
-      display.lcd().fillScreen(ST77XX_RED);
-      display.lcd().setCursor(0, 0);
-      display.lcd().setTextColor(ST77XX_WHITE);
-      display.lcd().print("EEPROM ERROR WRITING ");
-      display.lcd().print(addr);
-      display.lcd().print("\n(");
-      display.lcd().print(count - addr);
-      display.lcd().print(" REMAINING)");
-      display.lcd().print("\nCODE: ");
-      display.lcd().print(ret);
-      delay(2000);
-      display.lcd().fillScreen(ST77XX_BLACK);
+      char errorMsg[64];
+      sprintf(errorMsg, " EEPROM ERROR WRITING %i\n (%i REMAINING)\n CODE: %x", addr, count - addr, ret);
+      display.error(errorMsg, ST77XX_RED, 2000); 
       return;
     }
   }
-  
 }
 
 void setup()
@@ -568,27 +741,21 @@ void setup()
   opl3.setRegister(0, OPL3::Register::TEST_REG, 0, 0);
   opl3.setRegister(1, OPL3::Register::OPL3, 0, 1);
   opl3.flush();
-
+  
   // Load settings.
   //0x801F000, 0x801F800, 0x400
   //0x8000000
   EEPROM.init();
-  if(readSettings())
-    display.lcd().fillScreen(ST77XX_GREEN);
-  else
-    display.lcd().fillScreen(ST77XX_RED);
+  if(!readSettings())
+  {
+    char errorMsg[64];
+    sprintf(errorMsg, " EEPROM CORRUPT. Reset to default.");
+    display.error(errorMsg, ST77XX_RED, 2000); 
+  }
 
-  uint16_t counts = 0;
-  //EEPROM.count(&count);
-  uint16_t maxCount = EEPROM.maxcount();
-      display.lcd().setCursor(0, 0);
-      display.lcd().setTextColor(ST77XX_WHITE);
-      display.lcd().print("EEPROM COUNT ");
-      display.lcd().print(counts);
-      display.lcd().print("EEPROM MAX ");
-      display.lcd().print(maxCount);
-  delay(1000);
-  display.lcd().fillScreen(ST77XX_BLACK);
+  // Setup USB MIDI.
+  USBComposite.setProductId(0x0031);
+  midi.begin();
 }
 
 
@@ -636,14 +803,14 @@ void adjustClamp(V& v, D d, D min, D max)
 
 void loop()
 {
+  static constexpr int ACTIVE_SENSING_UPDATE_RATE = 5000;
   static constexpr int DISPLAY_UPDATE_RATE = 100000;
   static constexpr int GATE_UPDATE_RATE = 1;
   static constexpr int OPL3_UPDATE_RATE = 1;
   static constexpr int GATE_TRIGGER_VALUE = 3000;
 
-  static constexpr int SAVE_TIMER = 100000;
-  
-  static int displayUpdateTimer = 0;
+  static constexpr int SAVE_TIMER = 50000;
+
   static int gateUpdateTimer = 0;
   static int opl3UpdateTimer = 0;
   static int saveTimer = SAVE_TIMER;
@@ -651,6 +818,9 @@ void loop()
   static UIState uiState;
   
   {
+    // MIDI.
+    midi.poll();
+    
     // Handle inputs.
     static constexpr int ENCODER_MODE_SELECT = 0;
     static constexpr int ENCODER_A = 1;
@@ -681,6 +851,11 @@ void loop()
       if(btnVals[i] != 0)
         displayUpdateTimer = 0;
 
+    if(activeSensingUpdateRate == 0)
+    {
+      midi.sendActiveSense();
+      activeSensingUpdateRate = ACTIVE_SENSING_UPDATE_RATE;
+    }
 
     if(displayUpdateTimer == 0 || saveTimer < SAVE_TIMER)
     {
@@ -754,12 +929,28 @@ void loop()
 
         dispParams.selectFlags = UpdateFlags::ATTN | UpdateFlags::WAVE | UpdateFlags::MULT | OperatorFlags[uiState.selectedOp];
 
-        sprintf(dispParams.titleText, "V%u O%u:Attn,Wave,Mult", uiState.selectedVoice + 1, uiState.selectedOp + 1);
+        sprintf(dispParams.titleText, "V%u O%u:Misc.", uiState.selectedVoice + 1, uiState.selectedOp + 1);
       }
       break;
     }
 
+    static bool isMIDIConnected = false;
+    if(isMIDIConnected != midi.isConnected())
+    {
+      isMIDIConnected = midi.isConnected();
+    }
 
+    if(isMIDIConnected)
+    {
+      if(midi.hadActivity())
+      {
+        display.drawIcon(2, 10, 15, ST77XX_GREEN);
+      }
+      else
+      {
+        display.drawIcon(2, 10, 15, ST77XX_WHITE);
+      }
+    }
 
     // Button thing.
     prevBtnVals[0] = btnVals[1];
@@ -816,6 +1007,7 @@ void loop()
       }
     }
   
+    activeSensingUpdateRate--;
     //displayUpdateTimer--;
     gateUpdateTimer--;
     opl3UpdateTimer--;

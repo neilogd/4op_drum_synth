@@ -56,7 +56,7 @@ void Display::update(const struct DisplayParams& dispParams, const VoiceParams& 
     col = dispParams.shouldSelect(UpdateFlags::CONN) ? COLOR_SELECTED : COLOR_DEFAULT;
     lcd_.setTextColor(col);
 
-		drawIcon(4, 8, voiceParams.conn, col);
+		drawIcon(24, 8, voiceParams.conn, col);
 	}
  
 	if(dispParams.shouldUpdate(UpdateFlags::FREQ))
@@ -157,8 +157,30 @@ void Display::update(const struct DisplayParams& dispParams, const VoiceParams& 
       lcd_.print(attn);
       lcd_.print("dB");
     }
-}
+  }
 
 	lcd_.drawFastHLine(4, opOffY[2] - 4, 120, COLOR_DEFAULT);
 	lcd_.drawFastVLine(opOffX[1] - 4, 24, 128 - 24, COLOR_DEFAULT);
+}
+
+void Display::clear()
+{
+  lcd_.fillScreen(ST77XX_BLACK);
+  lcd_.setCursor(0, 0);
+  lcd_.setTextColor(ST77XX_WHITE);
+}
+
+void Display::print(const char* msg)
+{
+  lcd_.print(msg);
+}
+
+void Display::error(const char* text, uint16_t color, int ms)
+{
+  lcd_.fillScreen(color);
+  lcd_.setCursor(0, 0);
+  lcd_.setTextColor(ST77XX_WHITE);
+  lcd_.print(text);
+  delay(ms);
+  lcd_.fillScreen(ST77XX_BLACK);
 }

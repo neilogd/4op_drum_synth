@@ -77,7 +77,10 @@ public:
 	void drawIcon(int x, int y, int idx, uint16_t col);
 	void update(const struct DisplayParams& dispParams, const VoiceParams& voiceParams);
 
-  Adafruit_ST7735& lcd() { return lcd_; }
+  void clear();
+  void print(const char* msg);
+
+  void error(const char* text, uint16_t color, int ms);
 
 private:
 	static const int LCD_CS = PC13;
