@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 
+
 #include "display.h"
 #include "opl3.h"
 #include "opl3_transport.h"
@@ -16,6 +17,10 @@
 #include "USBMIDIEx.h"
 #include "utils.h"
 #include "config.h"
+
+// https://github.com/mpaland/printf
+// Reduces binary size by around 12k!
+#include "printf.h"
 
 #define DEBUG_LOGGING (0)
 
@@ -476,7 +481,7 @@ bool voice_update(VoiceParams& params, int idx, bool keyon, int vel, float freq)
       else if (f < 6208.431f)
         b = 7;
 
-      uint16_t fnum = (uint16_t)(f * pow(2.0f, 19.0f) / (14318180.0 / 288.0) / pow(2.0f, b - 1));
+      uint16_t fnum = (uint16_t)(f * powf(2.0f, 19.0f) / (14318180.0 / 288.0) / powf(2.0f, b - 1));
 
       opl3.setRegister(arr[0], OPL3::Register::BLOCK_NUM, off[0], b);
       opl3.setRegister(arr[0], OPL3::Register::FREQ_MSB, off[0], fnum >> 8);
