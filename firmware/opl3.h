@@ -103,12 +103,8 @@ namespace OPL3
 	class Interface
 	{
 	public:
-	  Interface(TRANS&& trans = TRANS())
-#if defined(WIN32)
-      : trans_(std::move(trans))
-#else
+	  Interface(TRANS& trans)
       : trans_(trans)
-#endif
     {
 		  memset(regs_, 0, sizeof(regs_));
 	  	memset(dirty_, 0xff, sizeof(dirty_));
@@ -161,7 +157,7 @@ namespace OPL3
 	  }
   
 	private:
-	  TRANS trans_;
+	  TRANS& trans_;
 	  uint8_t regs_[2][256] = {};
 	  uint64_t dirty_[2][4] = {};
 

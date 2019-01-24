@@ -204,4 +204,36 @@ public:
 
 extern const uint32 midiNoteFrequency_10ths[128];
 
+////////////////////////////////////////////////
+// FROM Arduino MIDI library
+namespace SysEx
+{
+/*! \brief Encode System Exclusive messages.
+ SysEx messages are encoded to guarantee transmission of data bytes higher than
+ 127 without breaking the MIDI protocol. Use this static method to convert the
+ data you want to send.
+ \param inData The data to encode.
+ \param outSysEx The output buffer where to store the encoded message.
+ \param inLength The lenght of the input buffer.
+ \return The lenght of the encoded output buffer.
+ @see decodeSysEx
+ Code inspired from Ruin & Wesen's SysEx encoder/decoder - http://ruinwesen.com
+ */
+unsigned encode(const byte* inData, byte* outSysEx, unsigned inLength);
+
+/*! \brief Decode System Exclusive messages.
+ SysEx messages are encoded to guarantee transmission of data bytes higher than
+ 127 without breaking the MIDI protocol. Use this static method to reassemble
+ your received message.
+ \param inSysEx The SysEx data received from MIDI in.
+ \param outData    The output buffer where to store the decrypted message.
+ \param inLength The lenght of the input buffer.
+ \return The lenght of the output buffer.
+ @see encodeSysEx @see getSysExArrayLength
+ Code inspired from Ruin & Wesen's SysEx encoder/decoder - http://ruinwesen.com
+ */
+unsigned decode(const byte* inSysEx, byte* outData, unsigned inLength);
+
+} // end namespace SysEx
+
 #endif

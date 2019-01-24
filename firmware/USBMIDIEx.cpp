@@ -541,3 +541,58 @@ void USBMIDIEx::handleActiveSense(void) {}
 void USBMIDIEx::handleReset(void) {}
 void USBMIDIEx::handleSystemExclusive(const byte *, unsigned int) {}
 #pragma GCC diagnostic pop
+
+////////////////////////////////////////////////
+// FROM Arduino MIDI library
+namespace SysEx
+{
+unsigned encode(const byte* inData, byte* outSysEx, unsigned inLength)
+{
+    unsigned outLength  = 0;     // Num bytes in output array.
+    byte count          = 0;     // Num 7bytes in a block.
+    outSysEx[0]         = 0;
+
+    for (unsigned i = 0; i < inLength; ++i)
+    {
+        const byte data = inData[i];
+        const byte msb  = data >> 7;
+        const byte body = data & 0x7f;
+
+        outSysEx[0] |= (msb << (6 - count));
+        outSysEx[1 + count] = body;
+
+        if (count++ == 6)
+        {
+            outSysEx   += 8;
+            outLength  += 8;
+            outSysEx[0] = 0;
+            count       = 0;
+        }
+    }
+    return outLength + count + (count != 0 ? 1 : 0);
+}
+
+unsigned decode(const byte* inSysEx, byte* outData, unsigned inLength)
+{
+    unsigned count  = 0;
+    byte msbStorage = 0;
+    byte byteIndex  = 0;
+
+    for (unsigned i = 0; i < inLength; ++i)
+    {
+        if ((i % 8) == 0)
+        {
+            msbStorage = inSysEx[i];
+            byteIndex  = 6;
+        }
+        else
+        {
+            const byte body = inSysEx[i];
+            const byte msb  = ((msbStorage >> byteIndex--) & 1) << 7;
+            outData[count++] = msb | body;
+        }
+    }
+    return count;
+}
+
+} // end namespace SysEx

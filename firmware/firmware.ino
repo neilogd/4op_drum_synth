@@ -6,17 +6,12 @@
 #include <cmath>
 #include <cstdint>
 
-#include "stm32f1/include/series/stm32.h"
-#include "stm32f1/include/series/gpio.h"
-#include "stm32f1/include/series/rcc.h"
-
 #include "display.h"
 #include "opl3.h"
+#include "opl3_transport.h"
 
 #include "analog_inputs.h"
 #include "encoders.h"
-
-#include "MCP23S17.h"
 
 #include "USBMIDIEx.h"
 #include "utils.h"
@@ -24,527 +19,30 @@
 
 #define DEBUG_LOGGING (0)
 
-Params params;
-
 /**
  * Globals
  */
-SPIClass SPI_2(2);
-Display display(&SPI_2);
-
-void toggleLED()
-{
-  static bool led = false;
-  led = !led;
-  //digitalWrite(PC13, led ? HIGH : LOW);
-}
-
-void flashLED(int i)
-{
-  for (; i > 0; i--)
-  {
-    toggleLED();
-    delay(100);
-    toggleLED();
-    delay(100);
-  }
-}
-
-#define USE_FAST_GPIO
-
-namespace OPL3
-{
-struct ICTransportNull
-{
-  ICTransportNull()
-  {
-  }
-
-  void reset()
-  {
-  }
-
-  void softReset()
-  {
-  }
-
-  void writeReg(uint8_t arr, uint8_t addr, uint8_t data)
-  {
-  }
-};
-
-struct ICTransportGPIO
-{
-  const uint8_t OPL3_CLK        = PB0;
-
-  const uint8_t OPL3_A0         = PB1;
-  const uint8_t OPL3_A1         = PB10;
-
-  const uint8_t OPL3_RST        = PA8;
-  const uint8_t OPL3_WR         = PA8;
-  const uint8_t OPL3_CS         = PA8;
-
-  const uint8_t OPL3_D0         = PA0;
-  const uint8_t OPL3_D1         = PA1;
-  const uint8_t OPL3_D2         = PA2;
-  const uint8_t OPL3_D3         = PA3;
-  const uint8_t OPL3_D4         = PA4;
-  const uint8_t OPL3_D5         = PA5;
-  const uint8_t OPL3_D6         = PA6;
-  const uint8_t OPL3_D7         = PA7;
-
-  ICTransportGPIO()
-  {
-  }
-
-  void reset()
-  {
-    pinMode(OPL3_A0, OUTPUT);
-    pinMode(OPL3_A1, OUTPUT);
-    pinMode(OPL3_D0, OUTPUT);
-    pinMode(OPL3_D1, OUTPUT);
-    pinMode(OPL3_D2, OUTPUT);
-    pinMode(OPL3_D3, OUTPUT);
-    pinMode(OPL3_D4, OUTPUT);
-    pinMode(OPL3_D5, OUTPUT);
-    pinMode(OPL3_D6, OUTPUT);
-    pinMode(OPL3_D7, OUTPUT);
-    pinMode(OPL3_WR, OUTPUT);
-    pinMode(OPL3_CS, OUTPUT);
-    pinMode(OPL3_RST, OUTPUT);
-    pinMode(OPL3_CLK, PWM);
-
-    // Setup clock.
-    const float target_clk = 14.318f;// / 8.0f;
-    const float period_cyc = (float)CYCLES_PER_MICROSECOND / target_clk;
-    const uint32_t max_reload = ((1 << 16) - 1);
-    const uint16_t prescaler = (period_cyc / max_reload + 1);
-    const float overflow = ((period_cyc + ((float)prescaler * 0.5f)) / (float)prescaler);
-
-    Timer3.setMode(3, TIMER_PWM);
-    Timer3.setPrescaleFactor((uint16_t)prescaler);
-    Timer3.setOverflow((uint16_t)overflow);
-    Timer3.setCompare(3, (uint16_t)(overflow * 0.5f));
-    Timer3.resume();
-
-    digitalWrite(OPL3_WR, HIGH);
-    digitalWrite(OPL3_CS, HIGH);
-
-    softReset();
-  }
-
-  void softReset()
-  {
-    digitalWrite(OPL3_RST, 0);
-    delayMicroseconds(20);
-    digitalWrite(OPL3_RST, 1);
-
-    // Waveform select enable + OPL3 enable.
-    //writeReg(0, 0x1, 0x20)
-    //writeReg(1, 0x5, 1);
-  }
-
-  void writeReg(uint8_t arr, uint8_t addr, uint8_t data)
-  {
-    digitalWrite(OPL3_A0, LOW);
-    digitalWrite(OPL3_A1, arr ? HIGH : LOW);
-
-#if defined(USE_FAST_GPIO)
-    GPIOA->regs->ODR = addr;
-#else
-    digitalWrite(OPL3_D0, (addr & 0b00000001) ? HIGH : LOW);
-    digitalWrite(OPL3_D1, (addr & 0b00000010) ? HIGH : LOW);
-    digitalWrite(OPL3_D2, (addr & 0b00000100) ? HIGH : LOW);
-    digitalWrite(OPL3_D3, (addr & 0b00001000) ? HIGH : LOW);
-    digitalWrite(OPL3_D4, (addr & 0b00010000) ? HIGH : LOW);
-    digitalWrite(OPL3_D5, (addr & 0b00100000) ? HIGH : LOW);
-    digitalWrite(OPL3_D6, (addr & 0b01000000) ? HIGH : LOW);
-    digitalWrite(OPL3_D7, (addr & 0b10000000) ? HIGH : LOW);
-#endif
-
-    digitalWrite(OPL3_CS, LOW);
-    digitalWrite(OPL3_WR, LOW);
-    delayMicroseconds(1);
-    digitalWrite(OPL3_CS, HIGH);
-    digitalWrite(OPL3_WR, HIGH);
-    delayMicroseconds(7);
-
-    digitalWrite(OPL3_A0, HIGH);
-#if defined(USE_FAST_GPIO)
-    GPIOA->regs->ODR = data;
-#else
-    digitalWrite(OPL3_D0, (data & 0b00000001) ? HIGH : LOW);
-    digitalWrite(OPL3_D1, (data & 0b00000010) ? HIGH : LOW);
-    digitalWrite(OPL3_D2, (data & 0b00000100) ? HIGH : LOW);
-    digitalWrite(OPL3_D3, (data & 0b00001000) ? HIGH : LOW);
-    digitalWrite(OPL3_D4, (data & 0b00010000) ? HIGH : LOW);
-    digitalWrite(OPL3_D5, (data & 0b00100000) ? HIGH : LOW);
-    digitalWrite(OPL3_D6, (data & 0b01000000) ? HIGH : LOW);
-    digitalWrite(OPL3_D7, (data & 0b10000000) ? HIGH : LOW);
-#endif
-
-    digitalWrite(OPL3_CS, LOW);
-    digitalWrite(OPL3_WR, LOW);
-    delayMicroseconds(1);
-    digitalWrite(OPL3_CS, HIGH);
-    digitalWrite(OPL3_WR, HIGH);
-    delayMicroseconds(7);
-  }
-};
-
-struct ICTransportExpander
-{
-  const uint8_t OPL3_CLK        = PB0;
-
-  const uint8_t OPL3_CS         = 8;
-  const uint8_t OPL3_A1         = 9;
-  const uint8_t OPL3_A0         = 10;
-  const uint8_t OPL3_RST        = 11;
-
-  MCP23S17 io;
-
-  ICTransportExpander()
-    : io(SPI_2, 0, PB12)
-  {
-  }
-
-  void reset()
-  {
-    pinMode(OPL3_CLK, PWM);
-
-    io.begin();
-    for(int i = 0; i < 16; ++i)
-    {
-      io.pinMode(i, 0);
-      io.pullupMode(i, 0);
-      io.inputInvert(i, 0);
-    }
-
-    // Setup clock.
-    setClock(14.318f);
-
-    io.digitalWrite(OPL3_CS, HIGH);
-
-    softReset();
-  }
-
-  void setClock(float target_clk)
-  {
-    const float period_cyc = (float)CYCLES_PER_MICROSECOND / target_clk;
-    const uint32_t max_reload = ((1 << 16) - 1);
-    const uint16_t prescaler = (period_cyc / max_reload + 1);
-    const float overflow = ((period_cyc + ((float)prescaler * 0.5f)) / (float)prescaler);
-
-    Timer3.pause();
-    Timer3.setMode(3, TIMER_PWM);
-    Timer3.setPrescaleFactor((uint16_t)prescaler);
-    Timer3.setOverflow((uint16_t)overflow);
-    Timer3.setCompare(3, (uint16_t)(overflow * 0.5f));
-    Timer3.resume();
-  }
-
-  void softReset()
-  {
-    io.begin();
-    io.digitalWrite(OPL3_RST, 0);
-    delayMicroseconds(20);
-    io.digitalWrite(OPL3_RST, 1);
-  }
-
-  unsigned flipBits(unsigned v)
-  {
-    v = ((v & 0b11110000) >> 4) | ((v & 0b00001111) << 4);
-    v = ((v & 0b11001100) >> 2) | ((v & 0b00110011) << 2);
-    v = ((v & 0b10101010) >> 1) | ((v & 0b01010101) << 1);
-    return v;
-  }
-  
-  void writeReg(uint8_t arr, uint8_t addr, uint8_t data)
-  {
-    io.begin();
-
-    unsigned aw = (1 << OPL3_RST) | (1 << OPL3_CS);
-    aw |= !!arr << OPL3_A1;
-    io.digitalWrite(aw);
-    aw |= flipBits(addr);
-    io.digitalWrite(aw);
-
-    io.digitalWrite(OPL3_CS, LOW);
-    delayMicroseconds(1);
-    io.digitalWrite(OPL3_CS, HIGH);
-    delayMicroseconds(7);
-
-    unsigned dw = (1 << OPL3_RST) | (1 << OPL3_CS) | (1 << OPL3_A0);
-    io.digitalWrite(dw);
-    dw |= flipBits(data);
-    io.digitalWrite(dw);
-
-    io.digitalWrite(OPL3_CS, LOW);
-    delayMicroseconds(1);
-    io.digitalWrite(OPL3_CS, HIGH);
-    delayMicroseconds(7);
-
-    for(int i = 0; i < 16; ++i)
-    {
-      io.pinMode(i, 1);
-      io.digitalRead(i);
-      io.pinMode(i, 0);
-    }
-  }
-};
-}
-
-
-////////////////////////////////////////////////
-// FROM Arduino MIDI library
-namespace SysEx
-{
-/*! \brief Encode System Exclusive messages.
- SysEx messages are encoded to guarantee transmission of data bytes higher than
- 127 without breaking the MIDI protocol. Use this static method to convert the
- data you want to send.
- \param inData The data to encode.
- \param outSysEx The output buffer where to store the encoded message.
- \param inLength The lenght of the input buffer.
- \return The lenght of the encoded output buffer.
- @see decodeSysEx
- Code inspired from Ruin & Wesen's SysEx encoder/decoder - http://ruinwesen.com
- */
-unsigned encode(const byte* inData, byte* outSysEx, unsigned inLength)
-{
-    unsigned outLength  = 0;     // Num bytes in output array.
-    byte count          = 0;     // Num 7bytes in a block.
-    outSysEx[0]         = 0;
-
-    for (unsigned i = 0; i < inLength; ++i)
-    {
-        const byte data = inData[i];
-        const byte msb  = data >> 7;
-        const byte body = data & 0x7f;
-
-        outSysEx[0] |= (msb << (6 - count));
-        outSysEx[1 + count] = body;
-
-        if (count++ == 6)
-        {
-            outSysEx   += 8;
-            outLength  += 8;
-            outSysEx[0] = 0;
-            count       = 0;
-        }
-    }
-    return outLength + count + (count != 0 ? 1 : 0);
-}
-
-/*! \brief Decode System Exclusive messages.
- SysEx messages are encoded to guarantee transmission of data bytes higher than
- 127 without breaking the MIDI protocol. Use this static method to reassemble
- your received message.
- \param inSysEx The SysEx data received from MIDI in.
- \param outData    The output buffer where to store the decrypted message.
- \param inLength The lenght of the input buffer.
- \return The lenght of the output buffer.
- @see encodeSysEx @see getSysExArrayLength
- Code inspired from Ruin & Wesen's SysEx encoder/decoder - http://ruinwesen.com
- */
-unsigned decode(const byte* inSysEx, byte* outData, unsigned inLength)
-{
-    unsigned count  = 0;
-    byte msbStorage = 0;
-    byte byteIndex  = 0;
-
-    for (unsigned i = 0; i < inLength; ++i)
-    {
-        if ((i % 8) == 0)
-        {
-            msbStorage = inSysEx[i];
-            byteIndex  = 6;
-        }
-        else
-        {
-            const byte body = inSysEx[i];
-            const byte msb  = ((msbStorage >> byteIndex--) & 1) << 7;
-            outData[count++] = msb | body;
-        }
-    }
-    return count;
-}
-
-} // end namespace SysEx
-
-OPL3::Interface<OPL3::ICTransportExpander> opl3;
-AnalogInputs analogInputs;
-Encoders encoders;
-
-bool voice_update(VoiceParams& params, int idx, bool keyon, int vel, float freq)
-{
-  static const int VOICE_CH[6] = { 0, 1, 2, 9, 10, 11 };
-  const int ch = VOICE_CH[idx];
-  const int numOps = params.conn < 2 ? 2 : 4;
-
-  int op[4] = { OPL3::MODE_4OP[0][ch], OPL3::MODE_4OP[1][ch], OPL3::MODE_4OP[2][ch], OPL3::MODE_4OP[3][ch] };
-
-  if (numOps == 2)
-  {
-    op[0] = OPL3::MODE_2OP[0][ch];
-    op[1] = OPL3::MODE_2OP[1][ch];
-    op[2] = -1;
-    op[3] = -1;
-  }
-
-  int arr[4] = { -1, -1, -1, -1};
-  int off[4] = { -1, -1, -1, -1};
-  for (int i = 0; i < numOps; ++i)
-  {
-    arr[i] = OPL3::OP_OFF[op[i]][0];
-    off[i] = OPL3::OP_OFF[op[i]][1];
-  }
-
-  if (keyon)
-  {
-    int mode4op = numOps == 4 ? 1 : 0;
-    switch (ch)
-    {
-      case 0: opl3.setRegister(1, OPL3::Register::EN_4OP_03, 0, mode4op); break;
-      case 1: opl3.setRegister(1, OPL3::Register::EN_4OP_14, 0, mode4op); break;
-      case 2: opl3.setRegister(1, OPL3::Register::EN_4OP_25, 0, mode4op); break;
-      case 9: opl3.setRegister(1, OPL3::Register::EN_4OP_9C, 0, mode4op); break;
-      case 10: opl3.setRegister(1, OPL3::Register::EN_4OP_AD, 0, mode4op); break;
-      case 11: opl3.setRegister(1, OPL3::Register::EN_4OP_BE, 0, mode4op); break;
-      default: break;
-    }
-
-    // Per voice config.
-    int attn[4] = { 0, 0, 0, 0 };
-    {
-      float f = freq < 0.0f ? params.freq : freq;
-      int b = 0;
-      if (f < 48.503f)
-        b = 0;
-      else if (f < 97.006f)
-        b = 1;
-      else if (f < 194.013f)
-        b = 2;
-      else if (f < 388.026f)
-        b = 3;
-      else if (f < 776.053f)
-        b = 4;
-      else if (f < 1552.107f)
-        b = 5;
-      else if (f < 3104.215f)
-        b = 6;
-      else if (f < 6208.431f)
-        b = 7;
-
-      uint16_t fnum = (uint16_t)(f * pow(2.0f, 19.0f) / (14318180.0 / 288.0) / pow(2.0f, b - 1));
-
-      opl3.setRegister(arr[0], OPL3::Register::BLOCK_NUM, off[0], b);
-      opl3.setRegister(arr[0], OPL3::Register::FREQ_MSB, off[0], fnum >> 8);
-      opl3.setRegister(arr[0], OPL3::Register::FREQ_LSB, off[0], fnum & 0xff);
-      opl3.setRegister(arr[0], OPL3::Register::FEEDBACK, off[0], params.feedback);
-
-      if (vel == -1)
-        vel = 127;
-      uint32_t voiceAttn = (127 - vel) >> 2;
-      switch (params.conn)
-      {
-        case 0:
-          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 0);
-          attn[1] = voiceAttn;
-          break;
-        case 1:
-          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 1);
-          attn[0] = voiceAttn;
-          attn[1] = voiceAttn;
-          break;
-        case 2:
-          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 0);
-          opl3.setRegister(arr[1], OPL3::Register::CONN, off[1], 0);
-          attn[3] = voiceAttn;
-          break;
-        case 3:
-          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 0);
-          opl3.setRegister(arr[1], OPL3::Register::CONN, off[1], 1);
-
-          attn[0] = voiceAttn;
-          attn[3] = voiceAttn;
-          break;
-        case 4:
-          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 1);
-          opl3.setRegister(arr[1], OPL3::Register::CONN, off[1], 0);
-
-          attn[1] = voiceAttn;
-          attn[3] = voiceAttn;
-
-          break;
-        case 5:
-          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 1);
-          opl3.setRegister(arr[1], OPL3::Register::CONN, off[1], 1);
-
-          attn[0] = voiceAttn;
-          attn[2] = voiceAttn;
-          attn[3] = voiceAttn;
-          break;
-      }
-    }
-
-    for (int i = 0; i < numOps; ++i)
-    {
-      // 0x20
-      opl3.setRegister(arr[i], OPL3::Register::EN_SUS, off[i], params.ops[i].en_sus);
-#if ENABLE_VIBRATO
-      opl3.setRegister(arr[i], OPL3::Register::EN_TRE, off[i], params.ops[i].en_tre);
-#else
-      opl3.setRegister(arr[i], OPL3::Register::EN_TRE, off[i], 0);
-#endif
-#if ENABLE_VIBRATO
-      opl3.setRegister(arr[i], OPL3::Register::EN_VIB, off[i], params.ops[i].en_vib);
-#else
-      opl3.setRegister(arr[i], OPL3::Register::EN_VIB, off[i], 0);
-#endif
-      opl3.setRegister(arr[i], OPL3::Register::KSR, off[i], 0);
-      opl3.setRegister(arr[i], OPL3::Register::MULT, off[i], params.ops[i].mult);
-
-      // 0x40
-      opl3.setRegister(arr[i], OPL3::Register::KSL, off[i], 0);
-      opl3.setRegister(arr[i], OPL3::Register::ATTN, off[i], std::min((long int)63, (long int)params.ops[i].attn + attn[i]));
-
-      // 0x60
-      opl3.setRegister(arr[i], OPL3::Register::ATTACK, off[i], params.ops[i].a);
-      opl3.setRegister(arr[i], OPL3::Register::DECAY, off[i], params.ops[i].d);
-
-      // 0x80
-      opl3.setRegister(arr[i], OPL3::Register::SUSTAIN, off[i], params.ops[i].s);
-      opl3.setRegister(arr[i], OPL3::Register::RELEASE, off[i], params.ops[i].r);
-
-      // 0xC0
-      opl3.setRegister(arr[i], OPL3::Register::CHAN_A, off[i], 1);
-      opl3.setRegister(arr[i], OPL3::Register::CHAN_B, off[i], 1);
-      opl3.setRegister(arr[i], OPL3::Register::CHAN_C, off[i], 1);
-      opl3.setRegister(arr[i], OPL3::Register::CHAN_D, off[i], 1);
-
-      // 0xE0
-      opl3.setRegister(arr[i], OPL3::Register::WAVE_SEL, off[i], params.ops[i].wave);
-    }
-  }
-
-  if (keyon)
-  {
-    opl3.setRegister(arr[0], OPL3::Register::KEY_ON, off[0], 1);
-  }
-  else
-  {
-    opl3.setRegister(arr[0], OPL3::Register::KEY_ON, off[0], 0);
-  }
-
-  opl3.flush();
-
-  return keyon;
-}
-
+static Params params;
+static SPIClass SPI_2(2);
+static Display display(&SPI_2);
+static OPL3::ICTransportExpander transport(&SPI_2);
+static OPL3::Interface<OPL3::ICTransportExpander> opl3(transport);
+static AnalogInputs analogInputs;
+static Encoders encoders;
 static int activeSensingUpdateRate = 0;
 static int displayUpdateTimer = 0;
 
+/**
+ * Forward declarations;
+ */
+bool voice_update(VoiceParams& params, int idx, bool keyon, int vel, float freq);
+void beginScan();
+bool readSettings();
+void writeSettings();
+
+/**
+ * MIDI handler (TODO: Move out of here)
+ */
 class USBMIDIHandler: public USBMIDIEx
 {
 public:
@@ -645,64 +143,6 @@ public:
 };
 
 USBMIDIHandler midi;
-
-
-void beginScan()
-{
-    Timer2.pause();
-    Timer2.setPeriod(200);
-    Timer2.setMode(1, TIMER_OUTPUT_COMPARE);
-    Timer2.setCompare(TIMER_CH1, 1); 
-    Timer2.attachCompare1Interrupt([](){ 
-      encoders.scan();
-    });
-    Timer2.refresh();
-    Timer2.resume();
-}
-
-bool readSettings()
-{
-  int addr = 0;
-  int count = sizeof(params) / 2;
-  uint16_t* data = reinterpret_cast<uint16_t*>(&params);
-  EEPROM.read(addr++, data++);
-  EEPROM.read(addr++, data++);
-
-  if(params.magicId == Params::MAGIC_ID)
-  {
-    for(int i = 2; i < count; ++i)
-      EEPROM.read(addr++, data++);
-
-    return true;
-  }
-  else
-  {
-    EEPROM.format();
-  }
-  return false;
-}
-
-void writeSettings()
-{
-  int addr = 0;
-  int count = sizeof(params) / 2;
-  params.magicId = Params::MAGIC_ID;
-  params.versionId = Params::VERSION;
-  uint16_t* data = reinterpret_cast<uint16_t*>(&params);
-  EEPROM.update(addr++, *data++);
-  EEPROM.update(addr++, *data++);
-  for(int i = 2; i < count; ++i)
-  {
-    uint16_t ret = EEPROM.update(addr++, *data++);
-    if(!(ret == EEPROM_OK || ret == EEPROM_SAME_VALUE))
-    {
-      char errorMsg[64];
-      sprintf(errorMsg, " EEPROM ERROR WRITING %i\n (%i REMAINING)\n CODE: %x", addr, count - addr, ret);
-      display.error(errorMsg, ST77XX_RED, 2000); 
-      return;
-    }
-  }
-}
 
 void setup()
 {
@@ -970,5 +410,231 @@ void loop()
     //displayUpdateTimer--;
     gateUpdateTimer--;
     opl3UpdateTimer--;
+  }
+}
+
+/**
+ * Functions.
+ */
+bool voice_update(VoiceParams& params, int idx, bool keyon, int vel, float freq)
+{
+  static const int VOICE_CH[6] = { 0, 1, 2, 9, 10, 11 };
+  const int ch = VOICE_CH[idx];
+  const int numOps = params.conn < 2 ? 2 : 4;
+
+  int op[4] = { OPL3::MODE_4OP[0][ch], OPL3::MODE_4OP[1][ch], OPL3::MODE_4OP[2][ch], OPL3::MODE_4OP[3][ch] };
+
+  if (numOps == 2)
+  {
+    op[0] = OPL3::MODE_2OP[0][ch];
+    op[1] = OPL3::MODE_2OP[1][ch];
+    op[2] = -1;
+    op[3] = -1;
+  }
+
+  int arr[4] = { -1, -1, -1, -1};
+  int off[4] = { -1, -1, -1, -1};
+  for (int i = 0; i < numOps; ++i)
+  {
+    arr[i] = OPL3::OP_OFF[op[i]][0];
+    off[i] = OPL3::OP_OFF[op[i]][1];
+  }
+
+  if (keyon)
+  {
+    int mode4op = numOps == 4 ? 1 : 0;
+    switch (ch)
+    {
+      case 0: opl3.setRegister(1, OPL3::Register::EN_4OP_03, 0, mode4op); break;
+      case 1: opl3.setRegister(1, OPL3::Register::EN_4OP_14, 0, mode4op); break;
+      case 2: opl3.setRegister(1, OPL3::Register::EN_4OP_25, 0, mode4op); break;
+      case 9: opl3.setRegister(1, OPL3::Register::EN_4OP_9C, 0, mode4op); break;
+      case 10: opl3.setRegister(1, OPL3::Register::EN_4OP_AD, 0, mode4op); break;
+      case 11: opl3.setRegister(1, OPL3::Register::EN_4OP_BE, 0, mode4op); break;
+      default: break;
+    }
+
+    // Per voice config.
+    int attn[4] = { 0, 0, 0, 0 };
+    {
+      float f = freq < 0.0f ? params.freq : freq;
+      int b = 0;
+      if (f < 48.503f)
+        b = 0;
+      else if (f < 97.006f)
+        b = 1;
+      else if (f < 194.013f)
+        b = 2;
+      else if (f < 388.026f)
+        b = 3;
+      else if (f < 776.053f)
+        b = 4;
+      else if (f < 1552.107f)
+        b = 5;
+      else if (f < 3104.215f)
+        b = 6;
+      else if (f < 6208.431f)
+        b = 7;
+
+      uint16_t fnum = (uint16_t)(f * pow(2.0f, 19.0f) / (14318180.0 / 288.0) / pow(2.0f, b - 1));
+
+      opl3.setRegister(arr[0], OPL3::Register::BLOCK_NUM, off[0], b);
+      opl3.setRegister(arr[0], OPL3::Register::FREQ_MSB, off[0], fnum >> 8);
+      opl3.setRegister(arr[0], OPL3::Register::FREQ_LSB, off[0], fnum & 0xff);
+      opl3.setRegister(arr[0], OPL3::Register::FEEDBACK, off[0], params.feedback);
+
+      if (vel == -1)
+        vel = 127;
+      uint32_t voiceAttn = (127 - vel) >> 2;
+      switch (params.conn)
+      {
+        case 0:
+          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 0);
+          attn[1] = voiceAttn;
+          break;
+        case 1:
+          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 1);
+          attn[0] = voiceAttn;
+          attn[1] = voiceAttn;
+          break;
+        case 2:
+          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 0);
+          opl3.setRegister(arr[1], OPL3::Register::CONN, off[1], 0);
+          attn[3] = voiceAttn;
+          break;
+        case 3:
+          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 0);
+          opl3.setRegister(arr[1], OPL3::Register::CONN, off[1], 1);
+
+          attn[0] = voiceAttn;
+          attn[3] = voiceAttn;
+          break;
+        case 4:
+          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 1);
+          opl3.setRegister(arr[1], OPL3::Register::CONN, off[1], 0);
+
+          attn[1] = voiceAttn;
+          attn[3] = voiceAttn;
+
+          break;
+        case 5:
+          opl3.setRegister(arr[0], OPL3::Register::CONN, off[0], 1);
+          opl3.setRegister(arr[1], OPL3::Register::CONN, off[1], 1);
+
+          attn[0] = voiceAttn;
+          attn[2] = voiceAttn;
+          attn[3] = voiceAttn;
+          break;
+      }
+    }
+
+    for (int i = 0; i < numOps; ++i)
+    {
+      // 0x20
+      opl3.setRegister(arr[i], OPL3::Register::EN_SUS, off[i], params.ops[i].en_sus);
+#if ENABLE_VIBRATO
+      opl3.setRegister(arr[i], OPL3::Register::EN_TRE, off[i], params.ops[i].en_tre);
+#else
+      opl3.setRegister(arr[i], OPL3::Register::EN_TRE, off[i], 0);
+#endif
+#if ENABLE_VIBRATO
+      opl3.setRegister(arr[i], OPL3::Register::EN_VIB, off[i], params.ops[i].en_vib);
+#else
+      opl3.setRegister(arr[i], OPL3::Register::EN_VIB, off[i], 0);
+#endif
+      opl3.setRegister(arr[i], OPL3::Register::KSR, off[i], 0);
+      opl3.setRegister(arr[i], OPL3::Register::MULT, off[i], params.ops[i].mult);
+
+      // 0x40
+      opl3.setRegister(arr[i], OPL3::Register::KSL, off[i], 0);
+      opl3.setRegister(arr[i], OPL3::Register::ATTN, off[i], std::min((long int)63, (long int)params.ops[i].attn + attn[i]));
+
+      // 0x60
+      opl3.setRegister(arr[i], OPL3::Register::ATTACK, off[i], params.ops[i].a);
+      opl3.setRegister(arr[i], OPL3::Register::DECAY, off[i], params.ops[i].d);
+
+      // 0x80
+      opl3.setRegister(arr[i], OPL3::Register::SUSTAIN, off[i], params.ops[i].s);
+      opl3.setRegister(arr[i], OPL3::Register::RELEASE, off[i], params.ops[i].r);
+
+      // 0xC0
+      opl3.setRegister(arr[i], OPL3::Register::CHAN_A, off[i], 1);
+      opl3.setRegister(arr[i], OPL3::Register::CHAN_B, off[i], 1);
+      opl3.setRegister(arr[i], OPL3::Register::CHAN_C, off[i], 1);
+      opl3.setRegister(arr[i], OPL3::Register::CHAN_D, off[i], 1);
+
+      // 0xE0
+      opl3.setRegister(arr[i], OPL3::Register::WAVE_SEL, off[i], params.ops[i].wave);
+    }
+  }
+
+  if (keyon)
+  {
+    opl3.setRegister(arr[0], OPL3::Register::KEY_ON, off[0], 1);
+  }
+  else
+  {
+    opl3.setRegister(arr[0], OPL3::Register::KEY_ON, off[0], 0);
+  }
+
+  opl3.flush();
+
+  return keyon;
+}
+
+void beginScan()
+{
+    Timer2.pause();
+    Timer2.setPeriod(200);
+    Timer2.setMode(1, TIMER_OUTPUT_COMPARE);
+    Timer2.setCompare(TIMER_CH1, 1); 
+    Timer2.attachCompare1Interrupt([](){ 
+      encoders.scan();
+    });
+    Timer2.refresh();
+    Timer2.resume();
+}
+
+bool readSettings()
+{
+  int addr = 0;
+  int count = sizeof(params) / 2;
+  uint16_t* data = reinterpret_cast<uint16_t*>(&params);
+  EEPROM.read(addr++, data++);
+  EEPROM.read(addr++, data++);
+
+  if(params.magicId == Params::MAGIC_ID)
+  {
+    for(int i = 2; i < count; ++i)
+      EEPROM.read(addr++, data++);
+
+    return true;
+  }
+  else
+  {
+    EEPROM.format();
+  }
+  return false;
+}
+
+void writeSettings()
+{
+  int addr = 0;
+  int count = sizeof(params) / 2;
+  params.magicId = Params::MAGIC_ID;
+  params.versionId = Params::VERSION;
+  uint16_t* data = reinterpret_cast<uint16_t*>(&params);
+  EEPROM.update(addr++, *data++);
+  EEPROM.update(addr++, *data++);
+  for(int i = 2; i < count; ++i)
+  {
+    uint16_t ret = EEPROM.update(addr++, *data++);
+    if(!(ret == EEPROM_OK || ret == EEPROM_SAME_VALUE))
+    {
+      char errorMsg[64];
+      sprintf(errorMsg, " EEPROM ERROR WRITING %i\n (%i REMAINING)\n CODE: %x", addr, count - addr, ret);
+      display.error(errorMsg, ST77XX_RED, 2000); 
+      return;
+    }
   }
 }
