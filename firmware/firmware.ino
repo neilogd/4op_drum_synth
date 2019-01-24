@@ -13,15 +13,13 @@
 #include "display.h"
 #include "opl3.h"
 
-#include "midi_instruments.h"
-#include "factory_settings.h"
-
 #include "analog_inputs.h"
 #include "encoders.h"
 
 #include "MCP23S17.h"
 
 #include "USBMIDIEx.h"
+#include "utils.h"
 
 
 #define DEBUG_LOGGING (0)
@@ -670,7 +668,7 @@ bool readSettings()
   EEPROM.read(addr++, data++);
   EEPROM.read(addr++, data++);
 
-  if(params.magicId == PARAMS_MAGIC_ID)
+  if(params.magicId == Params::MAGIC_ID)
   {
     for(int i = 2; i < count; ++i)
       EEPROM.read(addr++, data++);
@@ -688,7 +686,8 @@ void writeSettings()
 {
   int addr = 0;
   int count = sizeof(params) / 2;
-  params.magicId = PARAMS_MAGIC_ID;
+  params.magicId = Params::MAGIC_ID;
+  params.versionId = Params::VERSION;
   uint16_t* data = reinterpret_cast<uint16_t*>(&params);
   EEPROM.update(addr++, *data++);
   EEPROM.update(addr++, *data++);
@@ -775,31 +774,6 @@ struct UIState
 
   uint8_t mode = EDIT_VOICE_PARAMS;
 };
-
-template<typename V, typename D>
-void adjustWrap(V& v, D d, D min, D max)
-{
-  D v2 = v;
-  v2 += d;
-  if(v2 > max)
-    v2 = min;
-  if(v2 < min)
-    v2 = max;
-  v = v2;
-}
-
-template<typename V, typename D>
-void adjustClamp(V& v, D d, D min, D max)
-{
-  D v2 = v;
-  v2 += d;
-  if(v2 > max)
-    v2 = max;
-  if(v2 < min)
-    v2 = min;
-  v = v2;
-}
-
 
 void loop()
 {
@@ -891,16 +865,16 @@ void loop()
     {
     case UIState::EDIT_VOICE_PARAMS:
       {
-        adjustWrap(uiState.selectedVoice, encVals[ENCODER_MODE_SELECT], 0, 5);
-        adjustWrap(voice.conn, encVals[ENCODER_A], 0, 5);
-        adjustClamp(voice.feedback, encVals[ENCODER_B], 0, 7);
+        uiState.selectedVoice = adjustWrap(uiState.selectedVoice, encVals[ENCODER_MODE_SELECT], 0, 5);
+        voice.conn = adjustWrap(voice.conn, encVals[ENCODER_A], 0, 5);
+        voice.feedback = adjustClamp(voice.feedback, encVals[ENCODER_B], 0, 7);
 
         float freqMod = encVals[ENCODER_C];
         if(encVals[ENCODER_D] > 0)
           freqMod += (voice.freq * (1.0f + (encVals[ENCODER_D] * (1.0f / 24.0f)))) - voice.freq;
         else if(encVals[ENCODER_D] < 0)
           freqMod += (voice.freq / (1.0f + (-encVals[ENCODER_D] * (1.0f / 24.0f)))) - voice.freq;
-        adjustClamp(voice.freq, freqMod, 30.0f, 4000.0f);
+        voice.freq = adjustClamp(voice.freq, freqMod, 30.0f, 4000.0f);
 
         dispParams.selectFlags = UpdateFlags::FREQ | UpdateFlags::FEEDBACK | UpdateFlags::CONN;
 
@@ -910,10 +884,10 @@ void loop()
     case UIState::EDIT_OP_ADSR:
       {
         adjustWrap(uiState.selectedOp, encVals[ENCODER_MODE_SELECT], 0, voice.conn < 2 ? 1 : 3);
-        adjustClamp(op.a, encVals[ENCODER_A], 0, 15);
-        adjustClamp(op.d, encVals[ENCODER_B], 0, 15);
-        adjustClamp(op.s, encVals[ENCODER_C], 0, 15);
-        adjustClamp(op.r, encVals[ENCODER_D], 0, 15);
+        op.a = adjustClamp(op.a, encVals[ENCODER_A], 0, 15);
+        op.d = adjustClamp(op.d, encVals[ENCODER_B], 0, 15);
+        op.s = adjustClamp(op.s, encVals[ENCODER_C], 0, 15);
+        op.r = adjustClamp(op.r, encVals[ENCODER_D], 0, 15);
 
         dispParams.selectFlags = UpdateFlags::ENV | OperatorFlags[uiState.selectedOp];
 
@@ -922,10 +896,10 @@ void loop()
       break;
     case UIState::EDIT_OP_ATTN_WAVE_MULT:
       {
-        adjustWrap(uiState.selectedOp, encVals[ENCODER_MODE_SELECT], 0, voice.conn < 2 ? 1 : 3);
-        adjustClamp(op.attn, -encVals[ENCODER_A], 0, 63);
-        adjustClamp(op.wave, encVals[ENCODER_B], 0, 7);
-        adjustClamp(op.mult, encVals[ENCODER_C], 0, 11);
+        uiState.selectedOp = adjustWrap(uiState.selectedOp, encVals[ENCODER_MODE_SELECT], 0, voice.conn < 2 ? 1 : 3);
+        op.attn = adjustClamp(op.attn, -encVals[ENCODER_A], 0, 63);
+        op.wave = adjustWrap(op.wave, encVals[ENCODER_B], 0, 7);
+        op.mult = adjustClamp(op.mult, encVals[ENCODER_C], 0, 11);
 
         dispParams.selectFlags = UpdateFlags::ATTN | UpdateFlags::WAVE | UpdateFlags::MULT | OperatorFlags[uiState.selectedOp];
 
