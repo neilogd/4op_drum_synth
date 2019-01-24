@@ -903,11 +903,11 @@ void loop()
     {
       if(midi.hadActivity())
       {
-        display.drawIcon(2, 10, 15, ST77XX_GREEN);
+        display.drawIcon(2, 10, 15, COLOR_MIDI_ACTIVITY);
       }
       else
       {
-        display.drawIcon(2, 10, 15, ST77XX_WHITE);
+        display.drawIcon(2, 10, 15, COLOR_MIDI_IDLE);
       }
     }
 

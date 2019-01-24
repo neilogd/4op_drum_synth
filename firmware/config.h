@@ -1,12 +1,12 @@
 #pragma once
 
 // Update rates.
-static constexpr int ACTIVE_SENSING_UPDATE_RATE = 5000;
-static constexpr int DISPLAY_UPDATE_RATE = 100000;
-static constexpr int GATE_UPDATE_RATE = 1;
-static constexpr int OPL3_UPDATE_RATE = 1;
-static constexpr int GATE_TRIGGER_VALUE = 3000;
-static constexpr int SAVE_TIMER = 50000;
+#define ACTIVE_SENSING_UPDATE_RATE  5000
+#define DISPLAY_UPDATE_RATE         100000
+#define GATE_UPDATE_RATE            1
+#define OPL3_UPDATE_RATE            1
+#define GATE_TRIGGER_VALUE          3000
+#define SAVE_TIMER                  50000
 
 // Encoders & buttons
 enum EncoderIds
@@ -36,3 +36,11 @@ enum ButtonIds
 {
   BUTTON_MODE_SELECT = 0,
 };
+
+// Colors
+#define COLOR_DEFAULT             0b1000010000010000
+#define COLOR_BACKGROUND          0b0000000000000000
+#define COLOR_TITLE               0b1111111111111111
+#define COLOR_SELECTED            0b0000011110000000
+#define COLOR_MIDI_IDLE           COLOR_DEFAULT
+#define COLOR_MIDI_ACTIVITY       0b0000011110000000

@@ -1,10 +1,6 @@
 #include "display.h"
 #include "icons.h"
 
-#define COLOR_DEFAULT   0b1000010000010000
-#define COLOR_TITLE     0b1111111111111111
-#define COLOR_SELECTED  0b0000011110000000
-
 Display::Display(SPIClass* spi)
   : spi_(spi)
   , lcd_(spi, LCD_CS, LCD_DC, LCD_RST)
@@ -15,7 +11,7 @@ void Display::init()
 {
 	lcd_.initR(INITR_144GREENTAB);   // initialize a ST7735S chip, black tab
 	lcd_.setRotation(1);
-	lcd_.fillScreen(ST77XX_BLACK);
+	lcd_.fillScreen(COLOR_BACKGROUND);
   
   pinMode(LCD_CS, OUTPUT);
   pinMode(LCD_RST, OUTPUT);
@@ -165,7 +161,7 @@ void Display::update(const struct DisplayParams& dispParams, const VoiceParams& 
 
 void Display::clear()
 {
-  lcd_.fillScreen(ST77XX_BLACK);
+  lcd_.fillScreen(COLOR_BACKGROUND);
   lcd_.setCursor(0, 0);
   lcd_.setTextColor(ST77XX_WHITE);
 }

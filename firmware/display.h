@@ -1,6 +1,7 @@
 #pragma once
 
 #include "enum.h"
+#include "config.h"
 #include "params.h"
 
 #include <Adafruit_GFX.h>    // Core graphics library
