@@ -38,5 +38,4 @@ private:
 	int8_t buttonPins_[NUM_ENCODERS];
 
 	int8_t values_[NUM_ENCODERS];
-
 };

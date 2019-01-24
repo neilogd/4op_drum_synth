@@ -2,8 +2,8 @@
 #include <SPI.h>
 #include <USBComposite.h>
 #include <stdio.h>
-#include <algorithm>
-#include <cmath>
+//#include <algorithm>
+//#include <cmath>
 #include <cstdint>
 
 
@@ -190,16 +190,18 @@ void setup()
   //0x801F000, 0x801F800, 0x400
   //0x8000000
   EEPROM.init();
+
+  // Setup USB MIDI.
+  USBComposite.setProductId(0x0031);
+  midi.begin();
+
+  
   if(!readSettings())
   {
     char errorMsg[64];
     sprintf(errorMsg, " EEPROM CORRUPT. Reset to default.");
     display.error(errorMsg, ST77XX_RED, 2000); 
   }
-
-  // Setup USB MIDI.
-  USBComposite.setProductId(0x0031);
-  midi.begin();
 }
 
 
@@ -313,7 +315,7 @@ void loop()
       break;
     case UIState::EDIT_OP_ADSR:
       {
-        adjustWrap(uiState.selectedOp, encVals[ENCODER_MODE_SELECT], 0, voice.conn < 2 ? 1 : 3);
+        uiState.selectedOp = adjustWrap(uiState.selectedOp, encVals[ENCODER_MODE_SELECT], 0, voice.conn < 2 ? 1 : 3);
         op.a = adjustClamp(op.a, encVals[ENCODER_ENV_A], 0, 15);
         op.d = adjustClamp(op.d, encVals[ENCODER_ENV_D], 0, 15);
         op.s = adjustClamp(op.s, encVals[ENCODER_ENV_S], 0, 15);
@@ -552,7 +554,10 @@ bool voice_update(VoiceParams& params, int idx, bool keyon, int vel, float freq)
 
       // 0x40
       opl3.setRegister(arr[i], OPL3::Register::KSL, off[i], 0);
-      opl3.setRegister(arr[i], OPL3::Register::ATTN, off[i], std::min((long int)63, (long int)params.ops[i].attn + attn[i]));
+
+
+      int attnSum = params.ops[i].attn + attn[i];
+      opl3.setRegister(arr[i], OPL3::Register::ATTN, off[i], attnSum > 63 ? 63 : attnSum);
 
       // 0x60
       opl3.setRegister(arr[i], OPL3::Register::ATTACK, off[i], params.ops[i].a);
@@ -607,9 +612,18 @@ bool readSettings()
   uint16_t* data = reinterpret_cast<uint16_t*>(&params);
   EEPROM.read(addr++, data++);
   EEPROM.read(addr++, data++);
+  EEPROM.read(addr++, data++);
+  EEPROM.read(addr++, data++);
 
   if(params.magicId == Params::MAGIC_ID)
   {
+    if(params.version != Params::VERSION)
+    {
+      display.error("EEPROM version mismatch!", 0b1111100000000000, 3000);   
+      EEPROM.format();
+      return false;
+    }
+    
     for(int i = 2; i < count; ++i)
       EEPROM.read(addr++, data++);
 
@@ -627,8 +641,10 @@ void writeSettings()
   int addr = 0;
   int count = sizeof(params) / 2;
   params.magicId = Params::MAGIC_ID;
-  params.versionId = Params::VERSION;
+  params.version = Params::VERSION;
   uint16_t* data = reinterpret_cast<uint16_t*>(&params);
+  EEPROM.update(addr++, *data++);
+  EEPROM.update(addr++, *data++);
   EEPROM.update(addr++, *data++);
   EEPROM.update(addr++, *data++);
   for(int i = 2; i < count; ++i)

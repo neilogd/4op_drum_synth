@@ -10,7 +10,7 @@ Display::Display(SPIClass* spi)
 void Display::init()
 {
 	lcd_.initR(INITR_144GREENTAB);   // initialize a ST7735S chip, black tab
-	lcd_.setRotation(1);
+	lcd_.setRotation(3);
 	lcd_.fillScreen(COLOR_BACKGROUND);
   
   pinMode(LCD_CS, OUTPUT);

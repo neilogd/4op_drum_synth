@@ -23,3 +23,11 @@ V adjustClamp(V v, D d, D min, D max)
     v2 = min;
   return (V)v2;
 }
+
+// https://gist.github.com/XProger/433701300086245e0583
+float powf_fast(float a, float b)
+{
+  union { float d; int32_t x; } u = { a };
+  u.x = (int32_t)(b * (u.x - 1064866805) + 1064866805);
+  return u.d;
+}

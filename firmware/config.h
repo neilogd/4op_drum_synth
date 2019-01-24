@@ -5,7 +5,7 @@
 #define DISPLAY_UPDATE_RATE         100000
 #define GATE_UPDATE_RATE            1
 #define OPL3_UPDATE_RATE            1
-#define GATE_TRIGGER_VALUE          3000
+#define GATE_TRIGGER_VALUE          1024
 #define SAVE_TIMER                  50000
 
 // Encoders & buttons

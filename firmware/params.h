@@ -48,11 +48,11 @@ struct VoiceParams_V1_0
 template<uint32_t _VERSION>
 struct ParamsBase
 {
-  static const uint32_t MAGIC_ID = 0x1234fe03;
+  static const uint32_t MAGIC_ID = 0x1234fe04;
   static const uint32_t VERSION = _VERSION;
 
   uint32_t magicId = 0;
-  uint32_t versionId = 0;
+  uint32_t version = 0;
 };
 
 struct Params_V1_0 : ParamsBase<0x00010000>
