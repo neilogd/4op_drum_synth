@@ -1,0 +1,38 @@
+#pragma once
+
+// Update rates.
+static constexpr int ACTIVE_SENSING_UPDATE_RATE = 5000;
+static constexpr int DISPLAY_UPDATE_RATE = 100000;
+static constexpr int GATE_UPDATE_RATE = 1;
+static constexpr int OPL3_UPDATE_RATE = 1;
+static constexpr int GATE_TRIGGER_VALUE = 3000;
+static constexpr int SAVE_TIMER = 50000;
+
+// Encoders & buttons
+enum EncoderIds
+{
+  ENCODER_MODE_SELECT = 0,
+  ENCODER_A,
+  ENCODER_B,
+  ENCODER_C,
+  ENCODER_D,
+
+  ENCODER_VOICE_OP = ENCODER_A,
+  ENCODER_VOICE_FEEDBACK = ENCODER_B,
+  ENCODER_VOICE_PITCH_FINE = ENCODER_C,
+  ENCODER_VOICE_PITCH_COARSE = ENCODER_D,
+
+  ENCODER_ENV_A = ENCODER_A,
+  ENCODER_ENV_D = ENCODER_B,
+  ENCODER_ENV_S = ENCODER_C,
+  ENCODER_ENV_R = ENCODER_D,
+
+  ENCODER_OP_ATTN = ENCODER_A,
+  ENCODER_OP_WAVE = ENCODER_B,
+  ENCODER_OP_MULT = ENCODER_C,
+};
+
+enum ButtonIds
+{
+  BUTTON_MODE_SELECT = 0,
+};
