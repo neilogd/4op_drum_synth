@@ -234,15 +234,20 @@ void loop()
     // MIDI.
     midi.poll();
     
-    const int encVals[5] = {
+    const int encVals[10] = {
       encoders.getValue(0),
       encoders.getValue(1),
       encoders.getValue(2),
       encoders.getValue(3),
       encoders.getValue(4),
+      0 /*encoders.getValue(5)*/,
+      encoders.getValue(6),
+      encoders.getValue(7),
+      encoders.getValue(8),
+      encoders.getValue(9),
     };
 
-    for(int i = 0; i < 5; ++i)
+    for(int i = 0; i < 10; ++i)
       if(encVals[i] != 0)
         displayUpdateTimer = 0;
 
