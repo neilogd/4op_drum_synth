@@ -66,6 +66,14 @@ public:
 
   byte sysexBuffer[1024];
 
+#if MIDI_PERCUSSION_ENABLE
+  uint32_t midiPercussionOn[4] = {0, 0, 0, 0};  
+#endif
+
+#if MIDI_VOICE_ENABLE
+  uint32_t midiPercussionOn[4*6] = {0, 0, 0, 0};  
+#endif
+
   USBMIDIHandler()
   {
     setSystemExclusiveBuffer(sysexBuffer, sizeof(sysexBuffer));
@@ -84,20 +92,83 @@ public:
     return false;
   }
 
-  
+  int8_t getVoiceFromNote(unsigned int note)
+  {
+    for(int i = 0; i < 6; ++i)
+      if(VOICE_TO_PERCUSSION[i] == note)
+        return i;
+    return -1;
+  }
+
+  float getFreqFromNote(unsigned int note)
+  {
+    return powf(2.0f, (note- 69.0f) / 12.0f) * 440.0f;
+  }
+
   void handleNoteOff(unsigned int channel, unsigned int note, unsigned int velocity) override
   {
-    activity += 100;
+    activity += 10;
+
+#if MIDI_PERCUSSION_ENABLE
+    if(channel == 10)
+    {
+      int8_t v = getVoiceFromNote(note);
+      if(v >= 0)
+        voice_update(params.voices[v], v, false, -1, -1.0f);
+    }
+#endif
+
+#if MIDI_VOICES_ENABLE
+    if(channel < 6)
+        voice_update(params.voices[channel], channel, false, -1, -1.0f);
+#endif
   }
   
   void handleNoteOn(unsigned int channel, unsigned int note, unsigned int velocity) override
   {
-    activity += 100;
+    activity += 200;
+
+#if MIDI_PERCUSSION_ENABLE
+    if(channel == 10)
+    {
+      int8_t v = getVoiceFromNote(note);
+      if(v >= 0)
+      {
+        if(velocity > 0)
+          voice_update(params.voices[v], v, true, velocity, -1.0f);
+        else
+          voice_update(params.voices[v], v, false, -1, -1.0f);
+      }
+    }
+#endif
+
+#if MIDI_VOICES_ENABLE
+    if(channel < 6)
+    {
+      if(velocity > 0)
+        voice_update(params.voices[channel], channel, true, velocity, getFreqFromNote(note));
+      else
+        voice_update(params.voices[channel], channel, false, -1, -1.0f);
+    }
+#endif
   }
 
   void handleControlChange(unsigned int channel, unsigned int controller, unsigned int value) override
   {
-    activity += 100;
+    //activity += 100;
+  }
+
+  void handleReset()
+  {
+    for(int i = 0; i < 6; ++i)
+      voice_update(params.voices[i], i, false, -1, -1.0f);
+  }
+
+
+  void handleStop()
+  {
+    for(int i = 0; i < 6; ++i)
+      voice_update(params.voices[i], i, false, -1, -1.0f);
   }
 
   void sendSystemExclusive(SysExType type, const void* data, unsigned int size)
@@ -296,6 +367,13 @@ void loop()
     VoiceParams& voice = params.voices[uiState.selectedVoice];
     OperatorParams& op = voice.ops[uiState.selectedOp];
 
+    static bool prevEditNoteOn[6] = {
+      false, false, false, false, false, false
+    };
+    bool nextEditNoteOn[6] = {
+      false, false, false, false, false, false
+    };
+
     static DisplayParams dispParams;
 
     switch(uiState.mode)
@@ -345,27 +423,23 @@ void loop()
       break;
     }
 
-    static bool isMIDIConnected = false;
-    if(isMIDIConnected != midi.isConnected())
-    {
-      isMIDIConnected = midi.isConnected();
-    }
-
-    if(isMIDIConnected)
-    {
-      if(midi.hadActivity())
-      {
-        display.drawIcon(2, 10, 15, COLOR_MIDI_ACTIVITY);
-      }
-      else
-      {
-        display.drawIcon(2, 10, 15, COLOR_MIDI_IDLE);
-      }
-    }
-
     // Button thing.
     prevBtnVals[0] = btnVals[1];
     
+    static bool prevIsMIDIConnected = false;
+    static bool currIsMIDIConnected = false;
+    if(currIsMIDIConnected != midi.isConnected())
+      currIsMIDIConnected = midi.isConnected();
+
+    if(prevIsMIDIConnected != currIsMIDIConnected)
+    {
+      prevIsMIDIConnected = currIsMIDIConnected;
+      displayUpdateTimer = 0;
+    }
+
+    static bool prevActivity = 0;
+    bool currActivity = midi.hadActivity();
+
     if(displayUpdateTimer <= 0)
     {
       displayUpdateTimer += DISPLAY_UPDATE_RATE;
@@ -373,6 +447,19 @@ void loop()
       dispParams.updateFlags = UpdateFlags::ALL;
       dispParams.env = EnvelopeMode::BARS;
       display.update(dispParams, params.voices[uiState.selectedVoice]);
+      currActivity = !prevActivity;
+    }
+    
+    if(currIsMIDIConnected)
+    {
+      if(prevActivity != currActivity)
+      {
+        if(currActivity)
+          display.drawIcon(2, 10, 15, COLOR_MIDI_ACTIVITY);
+        else
+          display.drawIcon(2, 10, 15, COLOR_MIDI_IDLE);
+        prevActivity = currActivity;
+      }
     }
 
     static int prevGates[6] = { false, false, false, false, false, false };
@@ -389,13 +476,9 @@ void loop()
       for(int i = 0; i < 6; ++i)
       {
         if(analogInputs.getInput(i) > GATE_TRIGGER_VALUE)
-        {
           nextGates[i] = true;
-        }
         else
-        {
           nextGates[i] = false;
-        }
       }    
     }
   
@@ -406,18 +489,17 @@ void loop()
       {
         bool keyOn = !prevGates[i] && nextGates[i];
         bool keyOff = prevGates[i] && !nextGates[i];
-  
+
         if(keyOn)
-        {
           voice_update(params.voices[i], i, true, -1, -1.0f);
-        }
         if(keyOff)
-        {
           voice_update(params.voices[i], i, false, -1, -1.0f);
-        }
       }
     }
   
+    for(int i = 0; i < 6; ++i)
+      prevEditNoteOn[i] = nextEditNoteOn[i];
+
     activeSensingUpdateRate--;
     //displayUpdateTimer--;
     gateUpdateTimer--;

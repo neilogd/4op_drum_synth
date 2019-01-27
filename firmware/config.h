@@ -8,8 +8,23 @@
 #define GATE_TRIGGER_VALUE          1024
 #define SAVE_TIMER                  50000
 
+// Panel layout
 //#define PANEL_ROW_5_0
 #define PANEL_ROW_3_2
+
+// MIDI setup.
+#define MIDI_VOICES_ENABLE          true
+#define MIDI_PERCUSSION_ENABLE      true
+
+const uint8_t VOICE_TO_PERCUSSION[6] =
+{
+  36, // Bass drum
+  38, // Snare drum
+  47, // Mid tom
+  43, // Low tom
+  42, // Closed hi-hat
+  49, // Crash cymbal
+};
 
 // Encoders & buttons
 enum EncoderIds
