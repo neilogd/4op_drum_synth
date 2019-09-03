@@ -1,0 +1,119 @@
+ENTRY(ResetHandler)
+
+MEMORY
+{
+    @expanded_sections@
+}
+
+/*
+.output_section_name : {filename(.input_section_name)}
+*/
+
+_estack = ORIGIN(@ram_section_name@) + LENGTH(@ram_section_name@);
+	
+
+SECTIONS
+{
+    .StackPointer : {
+        KEEP(*(.StackPointer));
+    }> @flash_section_name@
+    
+    .VectorTable : {
+        KEEP(*(.VectorTable));
+    } > @flash_section_name@
+
+
+
+    .text :
+    {
+        *(.text)
+        *(.rodata)
+        KEEP(*(.init))
+        KEEP(*(.fini))
+        _etext = .;
+    } >  @flash_section_name@ 
+
+    .ARM.extab : /* exception unwsinding information */
+    {
+        *(.ARM.extab*)
+    } >@flash_section_name@
+    .ARM.exidx : /* index entries for section unwinding */
+    {
+        __exidx_start = .;
+        *(.ARM.exidx*)
+        __exidx_end = .;
+    } >@flash_section_name@
+
+    /*//global object initialization functions*/
+    .preinit_array :
+    {
+        PROVIDE_HIDDEN(__preinit_array_start = .);
+        KEEP(*(.preinit_array*))
+        PROVIDE_HIDDEN(__preinit_array_end = .);
+    } >@flash_section_name@
+    .init_array :
+    {
+        PROVIDE_HIDDEN(__init_array_start = .);
+        KEEP(*(SORT(.init_array.*)))
+        KEEP(*(.init_array*))
+        PROVIDE_HIDDEN(__init_array_end = .);
+    } >@flash_section_name@
+    .fini_array :
+    {
+        PROVIDE_HIDDEN(__fini_array_start = .);
+        KEEP(*(SORT(.fini_array.*)))
+        KEEP(*(.fini_array*))
+        PROVIDE_HIDDEN(__fini_array_end = .);
+    } >@flash_section_name@
+
+    StartInitializedDataInFlash = .;
+/* this address points to the initialized data in Flash */
+    .data : 
+    {
+        /* this symbol points to the ram as it is inside > sram */
+        StartInitializedDataInRam = .;
+        *(.data*)
+        EndInitializedDataInRam = .;
+    } > @ram_section_name@ AT > @flash_section_name@
+
+    .bss : {
+        StartUninitializedData = .;
+        __bss_start__ = .;
+        *(.bss)
+        EndUninitializedData = .;
+        __bss_end__ = .;
+        } > @ram_section_name@
+        end = .;
+        __end__ = .;
+}
+
+
+/*//ram = VMA
+//rom  = LMA
+//when we are using the section names in our startup
+//we need to get the address of the variables   
+*/
+
+
+/*
+    High Address
+/-----------------------------------------------\
+stack (grows downwards) 
+/-----------------------------------------------\
+
+
+
+
+/-----------------------------------------------\
+heap (grows upwards)
+/-----------------------------------------------\
+bss (uninitialized data, zeroed by ResetHandler)
+/-----------------------------------------------\
+data (initialized data, copied to ram by ResetHandler) LMA
+/-----------------------------------------------\
+text (program code)
+interrupt vectors
+
+/-----------------------------------------------\
+    Low Address
+*/

@@ -1,0 +1,6 @@
+[submodule "libraries/gfx_library"]
+	path = libraries/gfx_library
+	url = https://github.com/neilogd/gfx_library
+[submodule "firmware/gfx_library"]
+	path = firmware/gfx_library
+	url = https://github.com/neilogd/gfx_library

@@ -1,0 +1,102 @@
+#pragma once
+
+#include <stdint.h>
+
+// Which revision PCB.
+#define PCB_REV                     2
+
+// Update rates.
+#define DISPLAY_UPDATE_RATE         100000
+#define GATE_UPDATE_RATE            1
+#define OPL3_UPDATE_RATE            1
+#define GATE_TRIGGER_VALUE          1024
+#define SAVE_TIMER                  50000
+
+// OPL3
+#define CLOCK_SPEED_MHZ             14.318180f
+
+#if PCB_REV == 1
+#  define USE_IO_EXPANDER
+#elif PCB_REV == 2
+#  define USE_SHIFT_REGISTER
+#endif
+
+#define VERSION_STRING "WARNING! PROTOTYPE!\nOpal 4-op v0.3\n\n"
+
+// UI
+#define UI_INVERTED_ADSR            true
+
+// Panel layout
+#if PCB_REV == 1
+#  define PANEL_ROW_3_2
+#elif PCB_REV == 2
+#  define PANEL_REV_2
+#endif
+
+// Encoders & buttons
+enum EncoderIds
+{
+    ENCODER_MODE_SELECT = 0,
+    ENCODER_A,
+    ENCODER_B,
+    ENCODER_C,
+    ENCODER_D,
+    ENCODER_E,
+    ENCODER_F,
+    ENCODER_G,
+    ENCODER_H,
+
+#if defined(PANEL_ROW_5_0)
+    ENCODER_VOICE_OP = ENCODER_A,
+    ENCODER_VOICE_FEEDBACK = ENCODER_B,
+    ENCODER_VOICE_PITCH_FINE = ENCODER_C,
+    ENCODER_VOICE_PITCH_COARSE = ENCODER_D,
+
+    ENCODER_ENV_A = ENCODER_A,
+    ENCODER_ENV_D = ENCODER_B,
+    ENCODER_ENV_S = ENCODER_C,
+    ENCODER_ENV_R = ENCODER_D,
+
+    ENCODER_OP_ATTN = ENCODER_A,
+    ENCODER_OP_WAVE = ENCODER_B,
+    ENCODER_OP_MULT = ENCODER_C,
+#elif defined(PANEL_ROW_3_2)
+    ENCODER_VOICE_OP = ENCODER_F,
+    ENCODER_VOICE_FEEDBACK = ENCODER_B,
+    ENCODER_VOICE_PITCH_FINE = ENCODER_H,
+    ENCODER_VOICE_PITCH_COARSE = ENCODER_D,
+
+    ENCODER_ENV_A = ENCODER_F,
+    ENCODER_ENV_D = ENCODER_B,
+    ENCODER_ENV_S = ENCODER_H,
+    ENCODER_ENV_R = ENCODER_D,
+
+    ENCODER_OP_ATTN = ENCODER_F,
+    ENCODER_OP_WAVE = ENCODER_B,
+    ENCODER_OP_MULT = ENCODER_H,
+
+#elif defined(PANEL_REV_2)
+    ENCODER_VOICE_OP = ENCODER_A,
+    ENCODER_VOICE_FEEDBACK = ENCODER_B,
+    ENCODER_VOICE_PITCH_FINE = ENCODER_C,
+    ENCODER_VOICE_PITCH_COARSE = ENCODER_D,
+
+    ENCODER_ENV_A = ENCODER_A,
+    ENCODER_ENV_D = ENCODER_B,
+    ENCODER_ENV_S = ENCODER_C,
+    ENCODER_ENV_R = ENCODER_D,
+
+    ENCODER_OP_ATTN = ENCODER_A,
+    ENCODER_OP_WAVE = ENCODER_B,
+    ENCODER_OP_MULT = ENCODER_C,
+#endif
+};
+
+enum ButtonIds
+{
+    BUTTON_MODE_SELECT = 0,
+};
+
+// Debug
+//#define DEBUG_LOG_SCREEN(...)
+#define DEBUG_LOG_SCREEN(_a) ui.error(_a, 0b0000000000000111, 100);   
