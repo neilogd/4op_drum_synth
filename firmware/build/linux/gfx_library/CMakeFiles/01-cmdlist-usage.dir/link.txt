@@ -1,0 +1,1 @@
+/usr/bin/c++   -Werror -g -Wno-register -fno-exceptions -fno-rtti -Os -g -Wno-register -fno-exceptions -fno-rtti   CMakeFiles/01-cmdlist-usage.dir/examples/main.cpp.o CMakeFiles/01-cmdlist-usage.dir/examples/01-cmdlist-usage.cpp.o  -o 01-cmdlist-usage libgfx_library.a -lSDL2 

@@ -1,0 +1,1 @@
+/usr/bin/c++   -Werror -g -Wno-register -fno-exceptions -fno-rtti -Os   CMakeFiles/firmware.dir/src/analog_inputs.cpp.o CMakeFiles/firmware.dir/src/inputs.cpp.o CMakeFiles/firmware.dir/src/main.cpp.o CMakeFiles/firmware.dir/src/printf.c.o CMakeFiles/firmware.dir/src/ui.cpp.o  -o firmware gfx_library/libgfx_library.a -lSDL2 

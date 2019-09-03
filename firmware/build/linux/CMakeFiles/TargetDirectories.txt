@@ -1,0 +1,10 @@
+/home/neilogd/Dev/schematics/4op_drum_module/firmware/build/linux/CMakeFiles/rebuild_cache.dir
+/home/neilogd/Dev/schematics/4op_drum_module/firmware/build/linux/CMakeFiles/firmware.dir
+/home/neilogd/Dev/schematics/4op_drum_module/firmware/build/linux/CMakeFiles/edit_cache.dir
+/home/neilogd/Dev/schematics/4op_drum_module/firmware/build/linux/gfx_library/CMakeFiles/rebuild_cache.dir
+/home/neilogd/Dev/schematics/4op_drum_module/firmware/build/linux/gfx_library/CMakeFiles/edit_cache.dir
+/home/neilogd/Dev/schematics/4op_drum_module/firmware/build/linux/gfx_library/CMakeFiles/gfx_library_testbed.dir
+/home/neilogd/Dev/schematics/4op_drum_module/firmware/build/linux/gfx_library/CMakeFiles/02-tilecanvas-usage.dir
+/home/neilogd/Dev/schematics/4op_drum_module/firmware/build/linux/gfx_library/CMakeFiles/01-cmdlist-usage.dir
+/home/neilogd/Dev/schematics/4op_drum_module/firmware/build/linux/gfx_library/CMakeFiles/gfx_library.dir
+/home/neilogd/Dev/schematics/4op_drum_module/firmware/build/linux/gfx_library/CMakeFiles/00-canvas-usage.dir

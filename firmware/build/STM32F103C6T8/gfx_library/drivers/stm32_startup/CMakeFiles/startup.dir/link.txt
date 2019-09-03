@@ -1,0 +1,2 @@
+/usr/bin/arm-none-eabi-ar qc libstartup.a  CMakeFiles/startup.dir/startup.cpp.obj CMakeFiles/startup.dir/__/CMSIS/Device/ST/STM32F1xx/Source/Templates/system_stm32f1xx.c.obj
+/usr/bin/arm-none-eabi-ranlib libstartup.a
