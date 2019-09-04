@@ -3,14 +3,14 @@
 namespace
 {
     Inputs* encoder_ = nullptr;
-} // 
+} //
 
 Inputs::Inputs()
 {
     for(int i = 0; i < NUM_ENCODERS; ++i)
     {
         values_[i] = 0;
-        button_[i] = 1;
+        button_[i] = 0;
     }
 
     for(int i = 0; i < NUM_ROWS; ++i)

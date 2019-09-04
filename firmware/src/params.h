@@ -78,6 +78,7 @@ struct VoiceParams
     void adjustFreq(float val) { freq = adjustClamp(freq, val, 30.0f, 4000.0f); }
     void adjustConn(int val) { conn = adjustWrap(conn, val, 0, 5); }
     void adjustFeedback(int val) { feedback = adjustClamp(feedback, val, 0, 7); }
+    void adjustChannels(int val) { channels = adjustWrap(channels, val, 1, 15); }
 
     uint16_t freq = 440;
     uint8_t conn : 4;

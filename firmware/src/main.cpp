@@ -459,7 +459,7 @@ void ExampleInit()
 
     for(int i = 0; i < Params::MAX_STORED_VOICES; ++i)
     {
-        sprintf(params.storedVoiceInfo[i].name, "Slot: %i", i);
+        sprintf(params.storedVoiceInfo[i].name, "Slot %i:", i);
     }
 
     opl3.getTransport().reset();

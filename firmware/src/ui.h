@@ -138,6 +138,7 @@ public:
 
     // library
     int ItemProvider_Library(const MenuState* state, int idx, MenuItem* item);
+    MenuState* OnActionMenu_Library(MenuState* state);
 
     // voice
     MenuState* OnActionMenu_Voice(MenuState* state);

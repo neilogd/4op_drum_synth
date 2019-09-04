@@ -103,6 +103,7 @@ namespace
             CONN,
             FEEDBACK,
             FREQ,
+            CHANNELS,
             OP0,
             OP1,
             OP2,
@@ -115,6 +116,7 @@ namespace
             { "Connection" },
             { "Feedback" },
             { "Frequency" },
+            { "Channels" },
             { "Op1" },
             { "Op2" },
             { "Op3" },
@@ -178,6 +180,7 @@ namespace
 
             MenuScreen( "Library" )
                 .setItemProviderFn(&UI::ItemProvider_Library)
+                .setActionFn(&UI::OnActionMenu_Library)
             ,
 
             MenuScreen( "Voice" )
@@ -271,9 +274,10 @@ void UI::update()
     if(selectedIdx >= numItems)
         selectedIdx = 0;
 
-    if((selectedIdx - firstIdx) < 0)
+    int diff = (selectedIdx - firstIdx); 
+    if(diff < 0)
         firstIdx--;
-    else if((selectedIdx - firstIdx >= MAX_VISIBLE_ITEMS))
+    else if(diff >= MAX_VISIBLE_ITEMS)
         firstIdx++;
 
     if(buttonVals_[0] && !prevButtonVals_[0])
@@ -447,6 +451,15 @@ int UI::ItemProvider_Library(const MenuState* state, int idx, MenuItem* item)
     return 1 + Params::MAX_STORED_VOICES;
 }
 
+MenuState* UI::OnActionMenu_Library(MenuState* state)
+{
+    if(state->selectedItem == ItemsLibrary::BACK)
+    {
+        return &Menus::states[Menus::MAIN];
+    }    
+    return state;
+}
+
 MenuState* UI::OnActionMenu_Voice(MenuState* state)
 {
     switch(state->selectedItem)
@@ -477,6 +490,9 @@ void UI::OnUpdateMenu_Voice(MenuState* state)
         break;
     case ItemsVoice::FREQ:
         voiceParams.adjustFreq(encoderDeltaVals_[1] * encoderDeltaVals_[1] * encoderDeltaVals_[1]);
+        break;
+    case ItemsVoice::CHANNELS:
+        voiceParams.adjustChannels(encoderDeltaVals_[1] * encoderDeltaVals_[1] * encoderDeltaVals_[1]);
         break;
     }
 }
@@ -545,17 +561,28 @@ void UI::drawVoice(CommandList& cmdList, int selVoiceIdx, int selOperatorIdx, co
     cmdList.setFont(&fontDefault_);
 
     col = (selVoiceIdx == ItemsVoice::CONN) ? COLOR_SELECTED : COLOR_DEFAULT;
-    drawIcon(cmdList, 24, 9, voiceParams.conn, col);
+    drawIcon(cmdList, 4, 9, voiceParams.conn, col);
  
     col = (selVoiceIdx == ItemsVoice::FEEDBACK) ? COLOR_SELECTED : COLOR_DEFAULT;
-    drawIcon(cmdList, 50, 10, 14, col);
+    drawIcon(cmdList, 34, 10, 14, col);
     sprintf(s_textBuffer, "%i", (int)voiceParams.feedback);
-    cmdList.drawText(66, 11, s_textBuffer);
+    cmdList.drawText(50, 11, s_textBuffer);
 
     col = (selVoiceIdx == ItemsVoice::FREQ) ? COLOR_SELECTED : COLOR_DEFAULT;
     sprintf(s_textBuffer, "%iHz", (int)voiceParams.freq);
     cmdList.setColors(col, col);
-    cmdList.drawText(88, 11, s_textBuffer);
+    cmdList.drawText(70, 11, s_textBuffer);
+
+    col = (selVoiceIdx == ItemsVoice::CHANNELS) ? COLOR_SELECTED : COLOR_DEFAULT;
+    cmdList.setColors(col, col);
+    if(voiceParams.channels & 1)
+        cmdList.drawText(104, 11, "A");
+    if(voiceParams.channels & 2)
+        cmdList.drawText(108, 11, "B");
+    if(voiceParams.channels & 4)
+        cmdList.drawText(112, 11, "C");
+    if(voiceParams.channels & 8)
+        cmdList.drawText(116, 11, "D");
 
     cmdList.setColors(COLOR_LIGHT_GREY, COLOR_LIGHT_GREY);
     cmdList.drawHLine(4, opOffY[2] - 4, 120);
