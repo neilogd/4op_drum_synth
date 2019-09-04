@@ -1,1 +1,0 @@
-/usr/bin/c++   -Werror -g -Wno-register -fno-exceptions -fno-rtti -Os -g -Wno-register -fno-exceptions -fno-rtti   CMakeFiles/00-canvas-usage.dir/examples/main.cpp.o CMakeFiles/00-canvas-usage.dir/examples/00-canvas-usage.cpp.o  -o 00-canvas-usage libgfx_library.a -lSDL2 

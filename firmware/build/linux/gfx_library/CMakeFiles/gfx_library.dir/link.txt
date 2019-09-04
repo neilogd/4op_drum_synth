@@ -1,2 +1,0 @@
-/usr/bin/ar qc libgfx_library.a  CMakeFiles/gfx_library.dir/src/canvas.cpp.o CMakeFiles/gfx_library.dir/src/commandlist.cpp.o CMakeFiles/gfx_library.dir/src/tile_canvas.cpp.o CMakeFiles/gfx_library.dir/src/display_st7735.cpp.o CMakeFiles/gfx_library.dir/src/profiling.cpp.o
-/usr/bin/ranlib libgfx_library.a

@@ -1,1 +1,0 @@
-/usr/bin/c++   -Werror -g -Wno-register -fno-exceptions -fno-rtti -Os -g -Wno-register -fno-exceptions -fno-rtti   CMakeFiles/02-tilecanvas-usage.dir/examples/main.cpp.o CMakeFiles/02-tilecanvas-usage.dir/examples/02-tilecanvas-usage.cpp.o  -o 02-tilecanvas-usage libgfx_library.a -lSDL2 

@@ -1,2 +1,0 @@
-/usr/bin/arm-none-eabi-ar qc libgfx_library.a  CMakeFiles/gfx_library.dir/src/canvas.cpp.obj CMakeFiles/gfx_library.dir/src/commandlist.cpp.obj CMakeFiles/gfx_library.dir/src/tile_canvas.cpp.obj CMakeFiles/gfx_library.dir/src/display_st7735.cpp.obj CMakeFiles/gfx_library.dir/src/profiling.cpp.obj
-/usr/bin/arm-none-eabi-ranlib libgfx_library.a

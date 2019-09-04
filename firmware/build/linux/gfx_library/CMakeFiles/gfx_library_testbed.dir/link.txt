@@ -1,1 +1,0 @@
-/usr/bin/c++   -Werror -g -Wno-register -fno-exceptions -fno-rtti -Os -g -Wno-register -fno-exceptions -fno-rtti -flto -fno-fat-lto-objects   CMakeFiles/gfx_library_testbed.dir/examples/main.cpp.o CMakeFiles/gfx_library_testbed.dir/examples/testbed.cpp.o  -o gfx_library_testbed libgfx_library.a -lSDL2 
