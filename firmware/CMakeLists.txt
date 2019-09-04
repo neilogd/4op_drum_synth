@@ -48,6 +48,17 @@ IF(DEFINED STM32_FAMILY)
 	TARGET_LINK_LIBRARIES(gfx_library STM32${STM32_FAMILY}xx_HAL_Driver cmsis startup)
 	TARGET_LINK_OPTIONS(firmware PUBLIC -T ${LINKER_FILE})
 	TARGET_LINK_LIBRARIES(firmware gfx_library)
+
+	ADD_CUSTOM_COMMAND(
+		TARGET firmware POST_BUILD
+		DEPENDS firmware.elf
+		COMMAND ${CMAKE_SIZE} -B firmware.elf
+		COMMAND ${CMAKE_SIZE} -A firmware.elf > firmware.elf.size
+		COMMAND ${CMAKE_NM} -S --size-sort firmware.elf > firmware.elf.nm
+		COMMENT "Reporting binary size:"
+	)
+
+
 ELSE()
 	TARGET_LINK_LIBRARIES(firmware gfx_library SDL2)
 ENDIF()
